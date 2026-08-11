@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#08090B">
+<meta name="description" content="Gym Plan — برنامهٔ تمرین شخصی: ست‌شمار، تایمر استراحت، آموزش حرکات و تغذیه.">
+
+<!-- PWA / add-to-home-screen -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Plan">
+<meta name="application-name" content="Gym Plan">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="./assets/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+
+<title>Gym Plan — برنامهٔ تمرین</title>
+
+<!-- fonts are self-hosted: the app must work offline and without Google's CDN -->
+<link rel="preload" href="./assets/fonts/Vazirmatn-var.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{
+    font-family:"Vazirmatn";
+    src:url("./assets/fonts/Vazirmatn-var.woff2") format("woff2");
+    font-weight:100 900; font-style:normal; font-display:swap;
+  }
+  @font-face{
+    font-family:"JetBrains Mono";
+    src:url("./assets/fonts/JetBrainsMono-var.woff2") format("woff2");
+    font-weight:100 800; font-style:normal; font-display:swap;
+  }
+  :root{
+    --bg:#08090B; --surf:#101317; --raise:#171B21; --line:#232931; --line2:#2E3742;
+    --text:#F4F7FA; --muted:#8B96A3; --faint:#5A6470;
+    --volt:#D2FF4D; --ember:#FF5A2B; --ice:#45D6E8; --gold:#FFC24D; --carb:#7B93FF;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --hpad:14px; --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  html,body{margin:0;padding:0;overscroll-behavior-y:none}
+  body{font-family:"Vazirmatn",system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100dvh;line-height:1.75;font-size:15px;
+    padding-bottom:calc(158px + var(--safe-b));-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:300px;pointer-events:none;z-index:0;
+    background:radial-gradient(620px 220px at 88% -60px,rgba(210,255,77,.10),transparent 62%),
+               radial-gradient(520px 220px at -40px -40px,rgba(255,90,43,.07),transparent 58%)}
+  .wrap{max-width:520px;margin:0 auto;padding:0 var(--hpad);position:relative;z-index:1}
+  button{font-family:inherit}
+  .mono{font-family:var(--mono)}
+
+  /* ── header ── */
+  header{padding:22px 0 4px}
+  .brand{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  .blogo{display:inline-flex;direction:ltr;align-items:center;gap:9px}
+  .blogo svg{width:36px;height:18px;flex:0 0 auto;display:block}
+  .bname{font-family:var(--mono);font-size:17px;font-weight:800;letter-spacing:.6px;line-height:1}
+  .bname i{color:var(--volt);font-style:normal;margin-inline-start:.3em}
+  .brand .kick{margin-inline-start:auto}
+  .kick{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:2.6px;
+    font-weight:800;color:var(--volt);background:rgba(210,255,77,.08);
+    border:1px solid rgba(210,255,77,.22);padding:4px 10px;
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+  h1{font-size:25px;font-weight:900;margin:11px 0 5px;line-height:1.28;letter-spacing:-.4px}
+  h1 b{color:var(--volt);font-weight:900}
+  .sub{color:var(--muted);font-size:12.5px}
+  .meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:13px}
+  .chip{background:var(--surf);border:1px solid var(--line);padding:5px 10px;font-size:10.5px;color:var(--faint);
+    clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+  .chip b{color:var(--text);font-weight:700;font-family:var(--mono);font-size:11.5px}
+
+  /* ── day strip ── */
+  .strip{position:sticky;top:0;z-index:40;margin:14px calc(var(--hpad)*-1) 0;padding:9px var(--hpad);
+    background:rgba(8,9,11,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-block:1px solid var(--line)}
+  .strip .inner{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;
+    margin:0 calc(var(--hpad)*-1);padding:0 var(--hpad)}
+  .strip .inner::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;scroll-snap-align:center;background:var(--surf);border:1px solid var(--line);
+    color:var(--muted);padding:8px 13px;min-height:46px;font-size:13px;font-weight:800;cursor:pointer;
+    white-space:nowrap;text-align:center;position:relative;transition:.16s;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .tab .d{display:block;font-size:9px;color:var(--faint);font-weight:500;margin-top:-2px;letter-spacing:.3px}
+  .tab.on{background:var(--volt);border-color:var(--volt);color:#0B1200}
+  .tab.on .d{color:#3A4A00}
+  .tab.alt.on{background:var(--ice);border-color:var(--ice);color:#04191D}
+  .tab.alt.on .d{color:#0A3B44}
+  .tab.rest{opacity:.55}
+  .tab.today::after{content:"";position:absolute;top:5px;left:6px;width:5px;height:5px;
+    background:var(--ember);box-shadow:0 0 0 3px rgba(255,90,43,.18)}
+  .tab.full:not(.on){border-color:rgba(210,255,77,.5)}
+  .tab.full:not(.on) .d{color:var(--volt)}
+
+  /* ── scoreboard day header ── */
+  .dhead{margin-top:18px;background:var(--surf);border:1px solid var(--line);padding:16px 15px 14px;
+    position:relative;overflow:hidden;
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+  .dhead::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:3px;background:var(--volt)}
+  .dhead h2{font-size:21px;margin:0;font-weight:900;letter-spacing:-.3px}
+  .dhead .focus{color:var(--ice);font-size:11.5px;font-weight:600;margin-top:3px}
+  .score{display:flex;align-items:baseline;gap:6px;margin-top:13px;font-family:var(--mono)}
+  .score .n{font-size:34px;font-weight:800;line-height:1;color:var(--volt)}
+  .score .sl{font-size:15px;font-weight:700;color:var(--faint)}
+  .score .lab{font-size:10px;color:var(--faint);font-family:"Vazirmatn";letter-spacing:1px;margin-inline-start:auto;font-weight:700}
+  .score.full .n{color:var(--volt)}
+  .segs{display:flex;gap:2px;margin-top:10px}
+  .seg{flex:1;height:7px;background:var(--raise);border:1px solid var(--line);transition:background .25s,border-color .25s}
+  .seg.on{background:var(--volt);border-color:var(--volt)}
+
+  .warm{margin-top:11px;background:var(--surf);border:1px solid var(--line);
+    border-inline-start:3px solid var(--gold);padding:11px 13px;font-size:12.5px;color:var(--muted);line-height:1.85}
+  .warm b{color:var(--gold);font-weight:800}
+
+  /* ── exercise card ── */
+  .list{display:flex;flex-direction:column;gap:10px;margin-top:11px}
+  .card{background:var(--surf);border:1px solid var(--line);padding:14px;position:relative;overflow:hidden;
+    transition:border-color .2s;
+    clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px)}
+  .card.done{border-color:rgba(210,255,77,.34)}
+  .ctop{display:flex;align-items:flex-start;gap:11px}
+  .num{flex:0 0 auto;width:30px;height:30px;background:var(--raise);border:1px solid var(--line);
+    font-family:var(--mono);font-size:13px;font-weight:800;color:var(--faint);
+    display:grid;place-items:center;margin-top:1px;
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+  .card.done .num{background:var(--volt);border-color:var(--volt);color:#0B1200}
+  .cname{flex:1;min-width:0}
+  .cname .t{font-size:15.5px;font-weight:800;line-height:1.45;letter-spacing:-.2px}
+  .eq{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:10px;color:var(--muted);
+    background:var(--raise);border:1px solid var(--line);padding:2px 8px}
+  .eq::before{content:"";width:4px;height:4px;background:var(--ice)}
+  .note{display:block;margin-top:6px;font-size:11px;color:var(--gold);line-height:1.6}
+
+  .stats{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap}
+  .st{background:var(--raise);border:1px solid var(--line);padding:7px 10px;min-height:46px;
+    display:flex;flex-direction:column;justify-content:center}
+  .st .l{font-size:9px;color:var(--faint);letter-spacing:.6px;line-height:1.3;font-weight:700}
+  .st .v{font-family:var(--mono);font-size:15px;font-weight:800;color:var(--text);line-height:1.3}
+  .st.tap{cursor:pointer} .st.tap:active{background:var(--line)}
+  .st.tempo .v{color:var(--ice);font-size:13px}
+  .st.rest .v{color:var(--ember)}
+  .st.wt{flex:1;min-width:98px;padding:5px 10px}
+  .st.wt input{width:100%;background:transparent;border:none;color:var(--volt);font-family:var(--mono);
+    font-size:16px;font-weight:800;padding:0;text-align:start}
+  .st.wt input:focus{outline:none}
+  .st.wt input::placeholder{color:var(--faint);font-weight:600}
+
+  /* set chips */
+  .setsrow{display:flex;align-items:center;gap:9px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+  .setslab{font-size:9.5px;color:var(--faint);flex:0 0 auto;letter-spacing:.8px;font-weight:700}
+  .dots{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+  .dot{width:40px;height:40px;border:1.5px solid var(--line);background:var(--raise);color:var(--faint);
+    font-family:var(--mono);font-size:13px;font-weight:800;cursor:pointer;display:grid;place-items:center;
+    transition:transform .12s,background .18s,border-color .18s,color .18s;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .dot:active{transform:scale(.87)}
+  .dot.on{background:var(--volt);border-color:var(--volt);color:#0B1200}
+
+  /* learn */
+  .learn{margin-top:12px}
+  .learn>button{background:transparent;border:1px solid var(--line2);color:var(--ice);
+    padding:11px;min-height:46px;font-size:12.5px;font-weight:800;cursor:pointer;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .learn>button:active{background:var(--raise)}
+  .learn .panel{max-height:0;overflow:hidden;transition:max-height .34s ease}
+  .learn .inner{padding:15px 2px 2px}
+  .es{margin-bottom:14px}
+  .eh{font-size:9.5px;font-weight:800;letter-spacing:1.1px;color:var(--faint);margin-bottom:7px;
+    display:flex;align-items:center;gap:6px}
+  .eh::before{content:"";width:10px;height:2px;background:currentColor}
+  .eh.ok{color:var(--volt)} .eh.bad{color:var(--ember)} .eh.br{color:var(--gold)}
+  .ep{margin:0;font-size:12.5px;color:var(--muted);line-height:1.9}
+  .steps{counter-reset:s;margin:0;padding:0;list-style:none}
+  .steps li{position:relative;padding-inline-start:26px;margin:8px 0;font-size:12.5px;color:var(--muted);line-height:1.85}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;inset-inline-start:0;top:3px;
+    width:18px;height:18px;background:var(--raise);border:1px solid var(--line);color:var(--ice);
+    font-family:var(--mono);font-size:9.5px;font-weight:800;display:grid;place-items:center}
+  .bl{list-style:none;margin:0;padding:0}
+  .bl li{position:relative;padding-inline-start:17px;margin:7px 0;font-size:12.5px;color:var(--muted);line-height:1.85}
+  .bl li::before{position:absolute;inset-inline-start:0;top:0;font-weight:800}
+  .bl.ok li::before{content:"✓";color:var(--volt);font-size:11px}
+  .bl.bad li::before{content:"×";color:var(--ember);font-size:14px;top:-2px}
+  .tgt{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);line-height:1.9}
+  .tgt b{color:var(--ice);font-weight:600}
+  .tgt.sw b{color:var(--gold)}
+
+  .dfoot{margin-top:16px;display:flex;justify-content:center}
+  .reset{background:transparent;border:1px solid var(--line);color:var(--faint);
+    padding:11px 20px;min-height:46px;font-size:12px;cursor:pointer;font-family:inherit}
+  .reset:active{background:var(--surf)}
+
+  .restday{text-align:center;padding:46px 22px;background:var(--surf);border:1px solid var(--line);margin-top:18px;
+    clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
+  .restday .big{font-size:36px;line-height:1}
+  .restday h3{margin:13px 0 7px;font-size:18px;font-weight:900}
+  .restday p{color:var(--muted);font-size:13px;margin:0;line-height:1.9}
+
+  /* panels */
+  .acc{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+  .pi{background:var(--surf);border:1px solid var(--line);overflow:hidden;
+    clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px)}
+  .pi>button{width:100%;background:none;border:none;color:var(--text);font-family:inherit;font-size:14px;
+    font-weight:800;padding:15px 14px;min-height:54px;display:flex;align-items:center;
+    justify-content:space-between;cursor:pointer;text-align:start;gap:10px}
+  .pi .ic{color:var(--volt);font-family:var(--mono);transition:transform .22s;flex:0 0 auto}
+  .pi.open .ic{transform:rotate(45deg)}
+  .pi .body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .pi .bin{padding:0 14px 15px;font-size:12.5px;color:var(--muted);line-height:1.9}
+  .pi .bin strong{color:var(--text);font-weight:600}
+  .pi .bin .hi{color:var(--volt);font-weight:600}
+  .pi .bin ul{margin:7px 0;padding-inline-start:17px}
+  .pi .bin li{margin:6px 0}
+  .danger strong{color:var(--gold)}
+  .eqt{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+  .eqt th{text-align:start;color:var(--faint);font-weight:800;font-size:9.5px;letter-spacing:.8px;
+    padding:8px 6px;border-bottom:1px solid var(--line2)}
+  .eqt td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top;line-height:1.7}
+  .eqt tr:last-child td{border-bottom:none}
+  .eqt td b{color:var(--text);font-weight:700}
+  .badge{display:inline-block;font-size:9px;font-weight:800;padding:2px 7px;white-space:nowrap;margin-top:3px}
+  .b-must{background:rgba(255,90,43,.14);color:var(--ember);border:1px solid rgba(255,90,43,.3)}
+  .b-nice{background:rgba(210,255,77,.11);color:var(--volt);border:1px solid rgba(210,255,77,.28)}
+  .b-no{background:rgba(139,150,163,.09);color:var(--muted);border:1px solid var(--line)}
+
+  /* nutrition */
+  .nut{margin-top:16px;display:flex;flex-direction:column;gap:11px}
+  .ncard{background:var(--surf);border:1px solid var(--line);padding:16px;
+    clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px)}
+  .ncal{text-align:center}
+  .ncal .big{font-family:var(--mono);font-size:40px;font-weight:800;line-height:1;color:var(--volt)}
+  .ncal .u{color:var(--muted);font-size:13px;margin-top:5px}
+  .ncal .rg{color:var(--faint);font-size:11.5px;margin-top:6px}
+  .macros{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:4px}
+  .macro{background:var(--raise);border:1px solid var(--line);padding:11px 5px;text-align:center}
+  .macro .g{font-family:var(--mono);font-size:20px;font-weight:800}
+  .macro .n{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .macro .p{font-size:9.5px;color:var(--faint)}
+  .m-pro .g{color:var(--ember)} .m-fat .g{color:var(--gold)} .m-carb .g{color:var(--carb)}
+  .bar{height:10px;overflow:hidden;display:flex;margin-top:10px;border:1px solid var(--line)}
+  .bar span{display:block;height:100%}
+  .barleg{display:flex;justify-content:center;gap:13px;margin-top:8px;font-size:10.5px;color:var(--muted)}
+  .barleg i{display:inline-block;width:9px;height:9px;margin-inline-start:4px;vertical-align:middle}
+  .nlist{font-size:12.5px;color:var(--muted);margin:0;padding-inline-start:17px}
+  .nlist li{margin:8px 0} .nlist b{color:var(--text);font-weight:600} .nlist .hi{color:var(--volt);font-weight:600}
+  .ntitle{font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px}
+
+  /* ── rest timer ── */
+  .timer{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#120804;
+    border-top:2px solid var(--ember);box-shadow:0 -14px 38px rgba(0,0,0,.7);
+    transform:translateY(150%);transition:transform .34s cubic-bezier(.2,.8,.2,1);
+    padding:14px var(--hpad) calc(14px + var(--safe-b))}
+  .timer.show{transform:none}
+  .timer.done{border-top-color:var(--volt);background:#0C1204}
+  .timer .row{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:13px}
+  .tring{flex:0 0 auto;width:66px;height:66px;position:relative}
+  .tring svg{transform:rotate(-90deg)}
+  .tring .t{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);
+    font-size:21px;font-weight:800;color:var(--ember)}
+  .timer.done .tring .t{color:var(--volt)}
+  .tinfo{flex:1;min-width:0}
+  .tinfo .lab{font-size:9.5px;color:var(--ember);font-weight:800;letter-spacing:1.4px}
+  .timer.done .tinfo .lab{color:var(--volt)}
+  .tinfo .ex{font-size:13px;color:var(--text);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tbtns{display:flex;gap:6px;flex:0 0 auto}
+  .tbtn{width:44px;height:44px;border:1px solid var(--line2);background:var(--raise);color:var(--text);
+    font-size:12.5px;font-weight:800;cursor:pointer;display:grid;place-items:center;font-family:var(--mono);
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .tbtn.x{background:var(--ember);border-color:var(--ember);color:#180A04}
+  .tbtn:active{transform:scale(.9)}
+  .timer.done circle.fg{stroke:var(--volt)}
+
+  /* modal */
+  .modal{position:fixed;inset:0;z-index:60;background:rgba(4,5,7,.8);display:none;
+    align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .modal.show{display:flex}
+  .modal .box{background:var(--surf);border:1px solid var(--line2);max-width:380px;width:100%;padding:20px;
+    max-height:86dvh;overflow-y:auto;animation:rise .26s cubic-bezier(.2,.8,.2,1) both;
+    clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
+  @keyframes rise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+  .modal h3{margin:0 0 5px;font-size:17px;font-weight:900}
+  .modal .lead{color:var(--muted);font-size:12.5px;margin-bottom:14px;line-height:1.8}
+  .tg{display:flex;gap:6px;margin:14px 0}
+  .tg .sg{flex:1;text-align:center;background:var(--raise);border:1px solid var(--line);padding:10px 3px}
+  .tg .sg .nn{font-family:var(--mono);font-size:21px;font-weight:800;color:var(--ice)}
+  .tg .sg .ll{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .modal .exr{background:var(--bg);border:1px solid var(--line);padding:12px;font-size:12px;color:var(--muted);line-height:1.85}
+  .modal .exr b{color:var(--ice)}
+  .modal .close{margin-top:16px;width:100%;background:var(--volt);color:#0B1200;border:none;padding:13px;
+    min-height:48px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;
+    clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+
+  footer{text-align:center;color:var(--faint);font-size:10.5px;padding:24px 4px 8px;line-height:1.9}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  :focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+  @media (max-width:360px){:root{--hpad:11px}.dot{width:35px;height:35px}h1{font-size:22px}.score .n{font-size:29px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="blogo">
+        <svg viewBox="0 0 336 168" role="img" aria-label="Gym Plan">
+          <g fill="#D2FF4D">
+            <path d="M10 28H26v112H8l-8-8V36z"/><path d="M42 0h26v168H42l-10-10V10z"/>
+            <path d="M278 0h26v158l-10 10h-26V10z"/><path d="M320 28h16v104l-8 8h-18V38z"/>
+          </g>
+          <g fill="#EEF4FA">
+            <rect x="68" y="68" width="12" height="32"/><rect x="256" y="68" width="12" height="32"/>
+            <rect x="80" y="74" width="176" height="20"/>
+          </g>
+        </svg>
+        <span class="bname">GYM<i>PLAN</i></span>
+      </span>
+      <span class="kick">نسخهٔ نهایی</span>
+    </div>
+    <h1>پایین‌تنه و عرض + <b>اصلاح قامت</b></h1>
+    <div class="sub">۵ روز اصلی + یک جلسهٔ مهارتی کوتاه · هر گروه ۲ بار در هفته</div>
+  </header>
+  <nav class="strip"><div class="inner" id="tabs"></div></nav>
+  <main id="view"></main>
+  <footer>هر ست را که زدی، مربعش را بزن — تایمر خودکار شروع می‌شود و صفحه روشن می‌ماند.</footer>
+</div>
+
+<div class="timer" id="timer">
+  <div class="row">
+    <div class="tring">
+      <svg width="66" height="66" viewBox="0 0 66 66">
+        <circle cx="33" cy="33" r="29" fill="none" stroke="#232931" stroke-width="5"/>
+        <circle class="fg" cx="33" cy="33" r="29" fill="none" stroke="#FF5A2B" stroke-width="5"
+          stroke-linecap="round" stroke-dasharray="182.21" stroke-dashoffset="0" id="tfg"/>
+      </svg>
+      <div class="t" id="tnum">۶۰</div>
+    </div>
+    <div class="tinfo"><div class="lab" id="tlab">استراحت</div><div class="ex" id="tex">—</div></div>
+    <div class="tbtns">
+      <button class="tbtn" id="tplus" aria-label="۱۵ ثانیه بیشتر">۱۵+</button>
+      <button class="tbtn" id="tpause" aria-label="مکث">⏸</button>
+      <button class="tbtn x" id="tskip" aria-label="بستن">✕</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="tmodal">
+  <div class="box">
+    <h3>تمپو چیست؟</h3>
+    <div class="lead">سرعت اجرای حرکت. چهار عدد، به ترتیب زمان (ثانیه) برای هر فاز:</div>
+    <div class="tg">
+      <div class="sg"><div class="nn" id="tg0">۳</div><div class="ll">پایین‌رفتن<br>(منفی)</div></div>
+      <div class="sg"><div class="nn" id="tg1">۱</div><div class="ll">مکث<br>پایین</div></div>
+      <div class="sg"><div class="nn" id="tg2">۱</div><div class="ll">بالا‌آوردن<br>(مثبت)</div></div>
+      <div class="sg"><div class="nn" id="tg3">۰</div><div class="ll">مکث<br>بالا</div></div>
+    </div>
+    <div class="exr"><b>چرا مهم است؟</b> آهسته‌کردن فاز منفی، مدت زمان تحت فشار عضله را بیشتر می‌کند بدون نیاز به وزنهٔ سنگین‌تر — با همان دمبل، تحریک بیشتر و ریسک کمتر.</div>
+    <button class="close" onclick="closeTempo()">فهمیدم</button>
+  </div>
+</div>
+
+<script>
+const faD = s => String(s).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+const mem = {};
+const store = {
+  get(k){ try{ return localStorage.getItem(k);}catch(e){return mem[k]??null;} },
+  set(k,v){ try{ localStorage.setItem(k,v);}catch(e){mem[k]=v;} },
+  del(k){ try{ localStorage.removeItem(k);}catch(e){delete mem[k];} }
+};
+const V="tp4:";
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+/* ---------- کتابخانهٔ حرکات ----------
+   هر حرکت: setup / steps / cues / err / breath / target / swap */
+const EX = {
+
+explosivepull:{ن:"بارفیکس انفجاری (تا سینه)", eq:"بارفیکس",
+ setup:"میله را کمی بازتر از عرض شانه بگیر، شست دور میله. از آویزان کامل شروع کن، ولی شانه‌ها را فعال نگه دار — کاملاً شل آویزان نشو.",
+ steps:["شکم را سفت کن و پاها را کمی جلوتر از بدن بیاور تا تنه کمی زاویه بگیرد. این زاویه، مسیر قوسی کشش را ممکن می‌کند.",
+ "با تمام سرعت بکش. اینجا سرعت مهم است، نه تعداد.",
+ "هدف این است که میله به سینه‌ات برسد — اول قفسه، بعد جناغ. هر هفته چند سانت بالاتر.",
+ "کنترل‌شده پایین بیا و بین تکرارها کاملاً ریست کن. تکرار عجولانه ارزشی ندارد."],
+ cues:["این ست قدرتی نیست، ست سرعتی است. لحظه‌ای که سرعتت افت کرد ست تمام است — حتی اگر تکرار بیشتری در چنته داشته باشی.",
+ "معیار پیشرفتت ارتفاع است نه تعداد. اگر امروز تا جناغ رسیدی، پیشرفت کرده‌ای.",
+ "مسیر کشش عمودی نیست: کمی به عقب متمایل شو و میله را به سمت خودت بکش."],
+ err:["تبدیل کردنش به بارفیکس معمولی با تکرار بالا.",
+ "تاب دادن پا برای بالا رفتن. فعلاً هدف قدرت خالص است.",
+ "زدنش در انتهای جلسه وقتی خسته‌ای — بی‌فایده است."],
+ breath:"قبل از هر تکرار یک نفس، حین کشیدن بازدم انفجاری.",
+ target:"لتیسیموس، مرکز پشت — و مهم‌تر: توان انفجاری کشش",
+ swap:"اگر هنوز تا سینه نمی‌رسی: بارفیکس با کش کمکی، با تمرکز کامل روی سرعت"},
+
+bardip:{ن:"دیپ روی میلهٔ صاف", eq:"میلهٔ افقی هم‌قد کمر",
+ setup:"روی یک میلهٔ افقی که تا حدود کمرت می‌رسد، با دست‌های صاف خودت را بالا نگه دار. مچ‌ها بالای میله، آرنج‌ها قفل.",
+ steps:["کمی به جلو متمایل شو. این تفاوت اصلی با دیپ پارالل است — بدن باید کمی روی میله خم باشد، نه کاملاً عمود.",
+ "آرنج‌ها را نزدیک بدن نگه دار و آرام پایین بیا تا سینه نزدیک میله برسد.",
+ "در ابتدا لازم نیست عمیق بروی؛ همان دامنه‌ای که کنترل داری کافی است.",
+ "با فشار سینه و پشت‌بازو بالا برگرد و در بالا کاملاً صاف شو."],
+ cues:["این دقیقاً نیمهٔ بالای ماسل‌آپ است. اگر این را نتوانی، ماسل‌آپ نمی‌شود — هرچقدر هم بارفیکس بزنی.",
+ "از تمایل به جلو نترس. دیپ کاملاً عمود روی میلهٔ صاف، شانه و مچ را اذیت می‌کند."],
+ err:["عمود ماندن بدن.","باز کردن آرنج‌ها به طرفین.","رفتن به عمق زیاد قبل از آمادگی."],
+ breath:"در پایین آمدن دم، در فشار بالا بازدم.",
+ target:"سینه، پشت‌بازو، دلت قدامی — نیمهٔ بالای ماسل‌آپ",
+ swap:"اگر سخت است: دیپ پرشی روی همان میله، یا با کش زیر زانو"},
+
+mufull:{ن:"تلاش ماسل‌آپ کامل", eq:"بارفیکس",
+ setup:"میله را با گریپ کمی بازتر از شانه بگیر. اگر می‌توانی شست را روی میله بگذار (نه دورش) — این باعث می‌شود موقع گذر مجبور نباشی مچ را زیاد بچرخانی و کار را محسوس ساده‌تر می‌کند.",
+ steps:["کاملاً سرحال شروع کن. این حرکت اولین چیز جلسه است، بعد از گرم‌کردن.",
+ "از آویزان، کمی به عقب متمایل شو و بدن را مثل یک قوس آماده کن.",
+ "با تمام سرعت بکش و میله را به سمت خودت هدایت کن — نه مستقیم بالا.",
+ "لحظه‌ای که به بالاترین نقطه رسیدی، سینه را قاطعانه از روی میله به جلو بده و بلافاصله فشار بده تا دست‌ها صاف شوند."],
+ cues:["مسیر قوسی است، نه عمودی. مثل چرخیدن دور میله فکر کن، نه بالا رفتن از آن.",
+ "به گذر متعهد شو. مکث کردن در نقطهٔ بالا یعنی شکست — یا کامل می‌روی یا نمی‌روی.",
+ "۳ تا ۴ تلاش کافی است. اگر نشد، برو سراغ حرکت بعدی. تلاش خسته چیزی یاد نمی‌دهد و فقط آرنج را اذیت می‌کند."],
+ err:["تلاش کردن وقتی خسته‌ای — بی‌فایده و پرریسک.","نکشیدن به اندازهٔ کافی بالا و بعد تلاش برای زور زدن در گذر.","کشیدن عمودی و چسبیدن به میله."],
+ breath:"یک نفس عمیق قبل از هر تلاش، بازدم انفجاری حین کشیدن.",
+ target:"کل زنجیرهٔ ماسل‌آپ",
+ swap:"اگر امروز اصلاً نمی‌آید: مستقیم برو سراغ ماسل‌آپ جعبه"},
+
+boxmu:{ن:"ماسل‌آپ جعبه — کاهش تدریجی کمک", eq:"بارفیکس + جعبه",
+ setup:"جعبه را زیر میله بگذار. یک پا روی جعبه، پای دیگر آزاد. این همان تمرینی است که الان انجام می‌دهی — فرق در این است که از این به بعد کمک پا را عمداً کم می‌کنیم.",
+ steps:["با کمک پا بپر و ماسل‌آپ را کامل کن.",
+ "هر هفته یک پله کمک را کم کن، به این ترتیب: فشار کامل پا ← فشار نصفه ← فقط یک ضربهٔ سبک ← فقط نوک پا در تماس ← بدون تماس.",
+ "کنترل‌شده پایین بیا. فاز پایین آمدن را هدر نده — خودش تمرین است.",
+ "وقتی با «فقط نوک پا» سه تکرار تمیز زدی، آمادهٔ ماسل‌آپ کامل هستی."],
+ cues:["معیار پیشرفتت میزان کمک پاست، نه تعداد تکرار. سه تکرار با کمک کم، از هشت تکرار با کمک زیاد خیلی ارزشمندتر است.",
+ "جعبهٔ کوتاه‌تر = کمک کمتر. این ساده‌ترین راه برای سخت‌تر کردن حرکت است.",
+ "هر دو پا را مساوی کار کن تا عدم‌تعادل نسازی."],
+ err:["ماندن روی همان مقدار کمک برای هفته‌ها — بدن پیشرفت نمی‌کند مگر اینکه سخت‌تر شود.","استفاده از پا در فاز گذر. پا فقط باید در شروع کشش کمک کند، نه در چرخش آرنج."],
+ breath:"بازدم انفجاری حین کشیدن و گذر.",
+ target:"کل الگوی ماسل‌آپ با بار قابل مدیریت",
+ swap:"منفی ماسل‌آپ — اگر خواستی روی کنترل فاز پایین کار کنی"},
+
+muneg:{ن:"گذر ماسل‌آپ — منفی", eq:"بارفیکس + جعبه",
+ setup:"با کمک جعبه یا یک پرش، خودت را به بالای میله برسان تا در وضعیت دیپ قرار بگیری: بازوها صاف، سینه بالای میله.",
+ steps:["از بالا شروع کن: بازوها صاف، تنه کمی به جلو متمایل.",
+ "خیلی آرام پایین بیا تا سینه نزدیک میله برسد (فاز دیپ).",
+ "حالا مهم‌ترین بخش: بگذار آرنج‌ها آرام از بالای میله به زیر آن بچرخند. این همان «گذر» است و آرام رفتنش تمام چیزی است که یاد می‌گیری.",
+ "ادامه بده تا آویزان کامل. هدف: کل مسیر ۵ ثانیه یا بیشتر طول بکشد."],
+ cues:["منفی، مؤثرترین تمرین کل مسیر ماسل‌آپ است. بدن الگوی حرکت را در فاز منفی سریع‌تر یاد می‌گیرد.",
+ "اگر کنترل نداری و می‌افتی، از جعبهٔ بلندتر استفاده کن تا فقط بخش گذر را تمرین کنی.",
+ "به گذر متعهد باش — بیشتر شکست‌ها آنجاست که آدم وسط کار مردد می‌شود."],
+ err:["سریع پایین افتادن. اینطور هیچ چیزی یاد نمی‌گیری.","پرش شدید به بالا — این تمرین منفی است، نه پرشی."],
+ breath:"نفس را حبس نکن؛ در طول پایین آمدن بازدم آرام.",
+ target:"مهارت گذر + قدرت اکسنتریک کل زنجیره",
+ swap:"ماسل‌آپ پرشی: کنار جعبه بایست، میله را بگیر، با پا فشار بده و بپر و هم‌زمان سینه را از روی میله به جلو بده. الگو را با بار کم یاد می‌دهد."},
+
+pulldown:{ن:"لت پول‌داون از جلو", eq:"کابل · دستگاه لت",
+ setup:"پد ران را طوری تنظیم کن که ران‌ها محکم زیرش قفل شوند و باسنت هنگام کشیدن بلند نشود. میله را کمی بازتر از عرض شانه بگیر، شست دور میله.",
+ steps:["بنشین، سینه را بالا بده و بالاتنه را حدود ۱۰ تا ۱۵ درجه به عقب ببر — نه بیشتر. این زاویه ثابت می‌ماند و در طول ست تاب نمی‌خورد.",
+ "قبل از اینکه دست‌ها را خم کنی، شانه‌ها را پایین بکش (انگار می‌خواهی کتف‌ها را در جیب پشتی بگذاری). حرکت از اینجا شروع می‌شود.",
+ "میله را به سمت بالای سینه پایین بیاور. آرنج‌ها رو به پایین و کمی جلوتر از بدن حرکت می‌کنند، نه به طرفین.",
+ "در پایین یک ثانیه مکث کن و زیربغل را فشار بده، بعد در دو ثانیه کنترل‌شده بالا برگرد تا کشش کامل در لت."],
+ cues:["فکر کن آرنج را به سمت لگن می‌کشی، نه اینکه میله را با دست پایین می‌آوری.","سینه به سمت میله بالا بیاید، نه شانه‌ها به سمت گوش."],
+ err:["تاب دادن بالاتنه برای پایین آوردن وزنه — یعنی وزنه سنگین است.","کشیدن میله به پشت گردن. این حرکت برای مفصل شانه و گردن پرخطر است و در برنامهٔ تو حذف شده.","باز نکردن کامل دست‌ها در بالا — بیشترین رشد لت در همان کشش انتهایی است."],
+ breath:"در پایین آوردن میله بازدم، در برگشت به بالا دم.",
+ target:"لتیسیموس دورسی (عرض پشت)، گرد بزرگ، جلوبازو",
+ swap:"کش مقاومتی از بالای در، یا بارفیکس با کمک کش"},
+
+cablerow:{ن:"روئینگ قایقی نشسته (کابل)", eq:"کابل · دستگاه قایقی",
+ setup:"روی دستگاه قایقی بنشین، پاها روی تکیه‌گاه و زانو کمی خم. دستگیرهٔ V یا میلهٔ کوتاه را بگیر و آن‌قدر عقب بنشین که با دست‌های صاف، وزنه از پایه بلند شده باشد.",
+ steps:["صاف بنشین، سینه بالا، شانه‌ها پایین. بالاتنه عمود بر زمین است و در کل ست همان‌جا می‌ماند.",
+ "اول کتف‌ها را به هم نزدیک کن، بعد آرنج‌ها را به عقب بکش. آرنج نزدیک پهلو حرکت می‌کند.",
+ "دستگیره را تا نزدیک ناف بکش — نه به سینه. یک ثانیه در انتها فشار بده.",
+ "در دو ثانیه آرام برگردان تا دست‌ها تقریباً صاف شوند و کشش را در پشت حس کنی."],
+ cues:["این جایگزین ساده‌تر و مطمئن‌تر روئینگ خم است: چون نشسته‌ای، کمرت اصلاً درگیر نمی‌شود و نمی‌توانی فرم را خراب کنی.","فکر کن می‌خواهی آرنج‌هایت را به دیوار پشت سرت بزنی — نه اینکه دستگیره را با دست بکشی."],
+ err:["عقب و جلو رفتن بالاتنه برای کشیدن وزنه — رایج‌ترین اشتباه. تنه باید بی‌حرکت باشد.","گرد کردن کمر هنگام برگرداندن وزنه.","بالا کشیدن شانه‌ها به سمت گوش."],
+ breath:"در کشیدن بازدم، در برگرداندن دم.",
+ target:"مرکز پشت (رومبوئید و ذوزنقهٔ میانی)، لتیسیموس، دلت خلفی",
+ swap:"اگر دستگاه قایقی نبود: روئینگ سینه‌تکیه با دمبل"},
+
+chestrow:{ن:"روئینگ سینه‌تکیه دمبل (میز شیب‌دار)", eq:"دمبل + میز شیب‌دار",
+ setup:"میز را روی شیب ۳۰ تا ۴۵ درجه بگذار. رو به میز، سینه‌ات را کامل روی تکیه‌گاه بگذار و پاها را محکم روی زمین بگیر. دمبل‌ها زیر شانه‌ها آویزان می‌مانند.",
+ steps:["سینه در کل ست به میز چسبیده می‌ماند — این نکتهٔ کل حرکت است.",
+ "دمبل‌ها را آویزان نگه دار، دست‌ها صاف. سر را بالا نگیر؛ گردن در امتداد بدن.",
+ "آرنج‌ها را به سمت لگن بکش تا دمبل‌ها کنار پهلو برسند. کتف‌ها را جمع کن.",
+ "یک ثانیه در بالا فشار بده، بعد در دو ثانیه آرام پایین ببر تا کشش کامل."],
+ cues:["این حرکت را عمداً انتخاب کردم چون تقریباً غیرممکن است اشتباه انجامش بدهی: میز موقعیت بدنت را برایت تنظیم می‌کند و کمرت هیچ فشاری نمی‌گیرد.","هیچ دستگاه خاصی نمی‌خواهد — فقط دو دمبل و یک میز شیب‌دار."],
+ err:["بلند کردن سینه از میز برای کشیدن وزنهٔ سنگین‌تر — اگر این کار را می‌کنی، وزنه را کم کن.","کشیدن دمبل‌ها به سمت سینه به‌جای پهلو.","کوتاه کردن دامنه و صاف نکردن کامل دست در پایین."],
+ breath:"در کشیدن بازدم، در پایین بردن دم.",
+ target:"مرکز پشت، لتیسیموس، دلت خلفی",
+ swap:"اگر میز شیب‌دار نبود: روئینگ تک‌دست با تکیهٔ دست روی نیمکت"},
+
+pullover:{ن:"پول‌اور دمبل", eq:"دمبل + نیمکت",
+ setup:"یک دمبل، دو دست از داخل صفحهٔ بالایی آن را بگیر (مثل مثلث). به پشت روی نیمکت صاف دراز بکش، پاها محکم روی زمین.",
+ steps:["دمبل را بالای سینه نگه دار، آرنج‌ها کمی خم و در همین زاویه قفل بمانند.",
+ "دمبل را در یک قوس به پشت سر ببر تا کشش واضحی در زیربغل و قفسهٔ سینه حس کنی.",
+ "یک ثانیه در کشش مکث کن؛ کمر روی نیمکت بماند و قوس نگیرد.",
+ "با فشار زیربغل دمبل را در همان قوس برگردان تا بالای سینه."],
+ cues:["زاویهٔ آرنج در کل حرکت ثابت است — این پول‌اور است نه پشت‌بازو.","حرکت را با کشیدن آرنج‌ها شروع کن، نه با فشار دست."],
+ err:["قوس دادن کمر برای رفتن به دامنهٔ عمیق‌تر.","استفاده از دمبل سنگین. این حرکت برای کشش و عرض است، نه برای رکوردزنی."],
+ breath:"هنگام بردن دمبل به عقب دم عمیق، هنگام برگرداندن بازدم.",
+ target:"لتیسیموس (کشش و عرض)، سینه، دندانه‌ای قدامی",
+ swap:"پول‌اور کابل ایستاده با میله صاف"},
+
+facepull:{ن:"Face Pull (کشش به صورت)", eq:"کابل یا کش",
+ setup:"کابل یا کش را هم‌سطح صورت یا کمی بالاتر ببند. طناب را با گریپ خنثی بگیر (شست‌ها رو به خودت)، یک قدم عقب بیا تا کش از ابتدا تحت کشش باشد.",
+ steps:["بایست، شکم سفت، سینه بالا. بازوها کاملاً جلو و کشیده.",
+ "طناب را به سمت پیشانی بکش، آرنج‌ها بالا و باز به طرفین بروند — بالاتر از خط مچ.",
+ "در انتهای حرکت دست‌ها را کمی به بیرون بچرخان، انگار می‌خواهی حالت «ژست عضله نشان دادن» بگیری.",
+ "دو ثانیه در انقباض مکث کن، بعد خیلی آرام برگرد."],
+ cues:["این کلیدی‌ترین حرکت اصلاح قامت در برنامهٔ توست — سبک بزن و مکث را جدی بگیر.","مکث دو ثانیه‌ای در انتها ارزش کل حرکت است. با وزنهٔ سنگین این مکث ممکن نمی‌شود."],
+ err:["سنگین گرفتن و تبدیل شدن حرکت به روئینگ.","پایین ماندن آرنج‌ها — اینطور دلت خلفی درگیر نمی‌شود.","جلو دادن سر هم‌زمان با کشیدن."],
+ breath:"در کشیدن بازدم، در برگشت دم.",
+ target:"دلت خلفی، ذوزنقهٔ میانی و تحتانی، چرخانندهٔ خارجی شانه (قامت)",
+ swap:"کش مقاومتی دور یک ستون یا دستگیرهٔ در"},
+
+inclinecurl:{ن:"جلوبازو دمبل روی میز شیب‌دار", eq:"دمبل + میز شیب‌دار",
+ setup:"میز را روی شیب ۴۵ تا ۶۰ درجه تنظیم کن. بنشین و تکیه بده؛ بازوها کاملاً آویزان و کمی پشت خط بدن قرار می‌گیرند.",
+ steps:["دمبل‌ها را با کف دست رو به جلو بگیر، آرنج‌ها کاملاً باز.",
+ "بدون تاب و بدون جلو آوردن آرنج، دمبل را در یک ثانیه بالا بیاور.",
+ "در بالا یک ثانیه منقبض کن.",
+ "در سه ثانیه پایین ببر تا کشش کامل — این بخش مهم‌ترین قسمت حرکت است."],
+ cues:["آرنج در کل ست در یک نقطه ثابت می‌ماند؛ فقط ساعد حرکت می‌کند.","کشش در پایین را کامل کن. موقعیت شیب‌دار دقیقاً برای همین کشش انتخاب شده."],
+ err:["بلند کردن شانه از تکیه‌گاه.","جلو آوردن آرنج در نیمهٔ بالایی — بار از جلوبازو به دلت منتقل می‌شود."],
+ breath:"در بالا آوردن بازدم، در پایین بردن دم.",
+ target:"جلوبازو (سر بلند)",
+ swap:"جلوبازو دمبل ایستاده با تکیه به دیوار"},
+
+deadbug:{ن:"Dead Bug", eq:"بدون تجهیزات",
+ setup:"به پشت دراز بکش، زانوها روی لگن و خم ۹۰ درجه، دست‌ها مستقیم به سمت سقف.",
+ steps:["کمر را کاملاً به زمین بچسبان. زیر کمرت نباید فضای خالی بماند — این وضعیت در کل ست حفظ می‌شود.",
+ "دست راست را به بالای سر و پای چپ را به سمت جلو دراز کن، تا نزدیک زمین.",
+ "اگر کمر از زمین بلند شد، دامنه را کوتاه‌تر کن.",
+ "آرام برگرد و طرف مقابل را انجام بده. هر رفت‌وبرگشت یک تکرار است."],
+ cues:["آهسته انجامش بده. سرعت، کل هدف حرکت را از بین می‌برد.","دنده‌ها را به سمت لگن پایین نگه دار."],
+ err:["بلند شدن کمر از زمین — رایج‌ترین اشتباه.","حبس کردن نفس."],
+ breath:"در دراز کردن دست و پا بازدم آرام و طولانی، در برگشت دم.",
+ target:"عرضی شکم و کور عمیق (ثبات ستون فقرات و قامت)",
+ swap:"Bird-Dog روی چهار دست و پا"},
+
+rdl:{ن:"ددلیفت رومانیایی (RDL)", eq:"هالتر یا دمبل",
+ setup:"هالتر جلوی ران، گریپ کمی بازتر از شانه. پاها به عرض لگن. زانوها را کمی خم کن و در همین زاویه قفل کن — RDL اسکوات نیست.",
+ steps:["سینه را بالا بده، کتف‌ها را جمع کن و شکم را سفت کن. هالتر باید در تماس با ران باشد.",
+ "از لگن خم شو: باسن را به عقب بفرست، انگار می‌خواهی با آن به دیوار پشت سرت ضربه بزنی. هالتر در تماس با ران به سمت پایین سُر می‌خورد.",
+ "تا جایی پایین برو که کشش واضحی در پشت ران حس کنی و کمر هنوز صاف باشد — معمولاً کمی زیر زانو. لحظه‌ای که کمر شروع به گرد شدن کرد، انتهای دامنهٔ توست.",
+ "با فشار پاشنه و جلو دادن لگن به حالت ایستاده برگرد. در بالا سرین را منقبض کن ولی به عقب قوس نده."],
+ cues:["هالتر باید در کل حرکت تقریباً چسبیده به پا باشد. اگر از بدن فاصله گرفت، بار روی کمر می‌افتد.","این حرکت با کشش پشت ران کنترل می‌شود، نه با عمق. عمق بیشتر امتیاز ندارد."],
+ err:["گرد شدن کمر در انتهای دامنه.","تبدیل کردن حرکت به اسکوات با خم کردن زیاد زانو.","بالا کشیدن سر و نگاه به آینه — گردن باید در امتداد ستون فقرات بماند."],
+ breath:"در بالا نفس عمیق بگیر و نگه دار، در پایین رفتن و برگشت نگه دار، بالا که رسیدی بازدم. اگر سابقهٔ فشار شکمی داری، به‌جای حبس نفس، بازدم آرام در مسیر بالا آمدن را با پزشکت چک کن.",
+ target:"همسترینگ، سرین، فیلهٔ کمر",
+ swap:"RDL با دمبل یا کتل‌بل، یا Cable Pull-Through"},
+
+bulgarian:{ن:"اسکوات بلغاری", eq:"دمبل + نیمکت",
+ setup:"روی پای جلو یک قدم بلند از نیمکت فاصله بگیر. روی پای عقب فقط پنجه یا روی پا روی نیمکت قرار می‌گیرد — وزن روی پای عقب نیست.",
+ steps:["دمبل‌ها را کنار بدن بگیر. بالاتنه را کمی به جلو متمایل کن (حدود ۱۵ درجه) — این سرین را بیشتر درگیر می‌کند.",
+ "مستقیم پایین برو، انگار زانوی عقب را به سمت زمین می‌بری. تا جایی که ران جلو تقریباً موازی زمین شود.",
+ "زانوی پای جلو در مسیر پنجه حرکت می‌کند و می‌تواند کمی از پنجه جلوتر برود — این طبیعی است.",
+ "از پاشنهٔ پای جلو فشار بده و بالا بیا. پای عقب فقط تعادل را نگه می‌دارد."],
+ cues:["اگر تعادل ندارى، فاصلهٔ پای جلو را کمی بیشتر کن یا با یک دست به چیزی تکیه بده.","تمام ست را روی یک پا کامل کن، بعد پا عوض کن."],
+ err:["نزدیک بودن پای جلو به نیمکت — زانو تحت فشار زیاد قرار می‌گیرد.","فشار آوردن از پنجهٔ پای عقب برای بالا آمدن.","خیلی سبک زدن. این حرکت را می‌توانی جدی سنگین کنی."],
+ breath:"در پایین رفتن دم، در بالا آمدن بازدم.",
+ target:"سرین، چهارسر، همسترینگ",
+ swap:"لانج ثابت یا استپ‌آپ روی جعبه"},
+
+legcurl:{ن:"پشت ران نشسته", eq:"دستگاه پشت ران نشسته",
+ setup:"روی دستگاه بنشین و پشتت را کامل به تکیه‌گاه بچسبان. محور چرخش زانویت باید دقیقاً هم‌راستای محور دستگاه باشد. پد بالایی را محکم روی پایین ران ببند تا لگن بلند نشود؛ پد پایینی روی پشت مچ، نه روی ساق.",
+ steps:["دستگیره‌ها را بگیر و لگن را ثابت کن. زاویهٔ نشسته باعث می‌شود همسترینگ از همان ابتدا کشیده باشد.",
+ "پنجه‌ها را به سمت ساق بکش (دورسی‌فلکشن) تا همسترینگ بیشتر و ساق کمتر درگیر شود.",
+ "پاشنه‌ها را در یک ثانیه به سمت زیر صندلی جمع کن و یک ثانیه در انقباض کامل نگه دار.",
+ "در دو ثانیه باز کن تا کشش کامل، ولی نگذار وزنه روی پایه بنشیند."],
+ cues:["چرا نشسته و نه خوابیده؟ در حالت نشسته لگن خم است، پس همسترینگ در وضعیت کشیده‌تر بار می‌گیرد — و تمرین در دامنهٔ کشیده برای رشد مؤثرتر است. همان تعداد ست، بازدهٔ بیشتر.",
+ "مکث در انقباض کامل، مؤثرترین بخش این حرکت است.",
+ "این تنها حرکت خم‌کنندهٔ زانو در برنامه است؛ بقیهٔ کار همسترینگ از راه باز کردن لگن انجام می‌شود."],
+ err:["بلند شدن لگن از صندلی — یعنی پد بالایی شل است یا وزنه سنگین.","تاب دادن و رها کردن سریع در فاز منفی.","بستن پد روی خودِ زانو به‌جای پایین ران."],
+ breath:"در جمع کردن بازدم، در باز کردن دم.",
+ target:"همسترینگ (در دامنهٔ کشیده)",
+ swap:"اگر دستگاه نشسته نبود: پشت ران خوابیده — کمی کم‌بازده‌تر ولی کاملاً قابل قبول"},
+
+hipthrust:{ن:"هیپ‌تراست", eq:"دستگاه یا نیمکت + وزنه",
+ setup:"لبهٔ پایینی کتف روی نیمکت. پاها به اندازه‌ای جلو باشند که در بالای حرکت ساق کاملاً عمود بر زمین شود. اگر از دستگاه استفاده می‌کنی، پد را روی خط لگن تنظیم کن.",
+ steps:["چانه را کمی به سمت سینه جمع کن و در کل حرکت به شکمت نگاه کن — این از قوس گرفتن کمر جلوگیری می‌کند.",
+ "با فشار پاشنه‌ها لگن را بالا ببر تا بدن از زانو تا شانه یک خط صاف شود.",
+ "در بالا دو ثانیه سرین را محکم منقبض کن. اینجا اصل حرکت است.",
+ "کنترل‌شده پایین بیا، ولی کاملاً روی زمین ننشین."],
+ cues:["دنده‌ها را پایین نگه دار. اگر در بالا کمرت قوس می‌گیرد، یعنی به‌جای سرین از کمر استفاده می‌کنی.","زانوها را به بیرون فشار بده."],
+ err:["بالا بردن بیش از حد لگن و قوس دادن کمر.","فشار آوردن از پنجه به‌جای پاشنه."],
+ breath:"در بالا بردن بازدم، در پایین آمدن دم.",
+ target:"سرین بزرگ، همسترینگ",
+ swap:"گلوت بریج روی زمین با دمبل روی لگن"},
+
+calfstand:{ن:"ساق ایستاده", eq:"دستگاه یا فقط یک پله",
+ setup:"پنجه روی لبهٔ پله یا صفحهٔ دستگاه، پاشنه در هوا. پاها به عرض لگن، زانوها صاف ولی قفل‌نشده.",
+ steps:["پاشنه را تا حد ممکن پایین بده و دو ثانیه در کشش کامل بمان.",
+ "تا بالاترین نقطهٔ ممکن روی پنجه بلند شو.",
+ "یک ثانیه در بالا نگه دار و ساق را فشار بده.",
+ "آرام پایین بیا تا کشش کامل بعدی."],
+ cues:["دامنهٔ کامل مهم‌تر از وزنه است. اگر نمی‌توانی کاملاً بالا بروی، سبک‌تر کن.","خم کردن زانو، بار را از ساق بیرونی به داخلی منتقل می‌کند — زانو را صاف نگه دار."],
+ err:["تکرارهای تند و فنری بدون دامنهٔ کامل.","خم کردن زانو برای بالا رفتن."],
+ breath:"در بالا رفتن بازدم، در پایین آمدن دم.",
+ target:"دوقلو (گاستروکنمیوس)",
+ swap:"ساق تک‌پا با وزن بدن روی پله"},
+
+pallof:{ن:"Pallof Press", eq:"کابل یا کش",
+ setup:"کنار کابل یا کش بایست، طوری که کشش دقیقاً از پهلو بیاید. دستگیره را با دو دست وسط سینه بگیر و یک قدم از دستگاه فاصله بگیر تا کش تحت کشش باشد.",
+ steps:["پاها به عرض شانه، زانو کمی خم، شکم سفت.",
+ "دست‌ها را مستقیم از جلوی سینه به بیرون فشار بده تا کاملاً صاف شوند.",
+ "کش سعی می‌کند تنه‌ات را بچرخاند — کار تو این است که نگذاری. سه ثانیه در انتها مقاومت کن.",
+ "آرام برگردان به سینه. تنه در کل ست کاملاً بی‌حرکت می‌ماند."],
+ cues:["این حرکت یک حرکت ضدچرخش است، نه چرخشی. هیچ چرخشی نباید اتفاق بیفتد.","دقیقاً به همین دلیل انتخاب شده: کور را قوی می‌کند بدون اینکه دور کمر را ضخیم کند."],
+ err:["چرخیدن لگن یا شانه هم‌زمان با فشار.","سنگین گرفتن — این حرکت ایزومتریک است، نه قدرتی."],
+ breath:"در فشار دادن بازدم آرام، در برگشت دم. نفس را حبس نکن.",
+ target:"مورب‌های شکم و کور عمیق (ضدچرخش)",
+ swap:"کش مقاومتی دور ستون یا دستگیرهٔ در"},
+
+inclinedb:{ن:"پرس بالاسینه دمبل (شیب ۳۰°)", eq:"دمبل + میز شیب‌دار",
+ setup:"شیب میز را روی ۳۰ درجه بگذار — بالاتر از این، بار به دلت قدامی منتقل می‌شود. دمبل‌ها را روی ران بگذار و با ضربهٔ زانو به موقعیت شروع ببر.",
+ steps:["کتف‌ها را به هم و به پایین جمع کن و در کل ست همان‌جا قفل نگه دار. سینه بالا، کمی قوس طبیعی در کمر.",
+ "دمبل‌ها را در امتداد بالای سینه نگه دار، آرنج حدود ۴۵ درجه از بدن فاصله دارد (نه ۹۰ درجه).",
+ "در سه ثانیه پایین بیاور تا دمبل‌ها هم‌سطح سینه شوند و کشش را حس کنی.",
+ "یک ثانیه مکث، بعد با فشار مستقیم بالا برو. آرنج را در بالا کاملاً قفل نکن."],
+ cues:["مچ مستقیم بالای آرنج بماند — نه جلوتر و نه عقب‌تر.","در بالا دمبل‌ها را کاملاً به هم نچسبان؛ تنش را روی سینه نگه دار."],
+ err:["باز کردن آرنج به ۹۰ درجه از بدن — پرفشارترین حالت برای مفصل شانه.","بلند کردن کتف از میز هنگام فشار.","بالا آوردن لگن از میز."],
+ breath:"در پایین آوردن دم، در فشار بالا بازدم.",
+ target:"بالای سینه، دلت قدامی، پشت‌بازو",
+ swap:"دستگاه پرس بالاسینه یا اسمیت با شیب"},
+
+flatdb:{ن:"پرس سینه دمبل / دستگاه", eq:"دمبل + نیمکت",
+ setup:"روی نیمکت صاف. کتف‌ها جمع و قفل، پاها محکم روی زمین.",
+ steps:["دمبل‌ها را کنار وسط سینه نگه دار، آرنج حدود ۴۵ درجه از بدن.",
+ "در دو ثانیه پایین بیاور تا کشش سینه.",
+ "بدون مکث طولانی، با فشار سینه بالا ببر.",
+ "در بالا آرنج را کاملاً قفل نکن و بلافاصله تکرار بعد را شروع کن."],
+ cues:["سینه را در کل ست بالا و باز نگه دار.","حرکت را با سینه هدایت کن نه با پشت‌بازو — روی نزدیک کردن آرنج‌ها به هم تمرکز کن."],
+ err:["پایین آوردن سریع و کنترل‌نشده.","بلند شدن کمر از نیمکت به شکل قوس زیاد."],
+ breath:"در پایین آوردن دم، در فشار بالا بازدم.",
+ target:"سینه (بخش میانی)، پشت‌بازو، دلت قدامی",
+ swap:"دستگاه پرس سینه یا شنای سوئدی با وزنه"},
+
+ohpdb:{ن:"پرس سرشانه دمبل، گریپ خنثی", eq:"دمبل + نیمکت",
+ setup:"نشسته با تکیه‌گاه. دمبل‌ها کنار شانه، کف دست‌ها رو به هم (گریپ خنثی). این گریپ عمداً انتخاب شده — فشار روی مفصل شانه و گردن را کم می‌کند.",
+ steps:["شکم را سفت کن و دنده‌ها را پایین نگه دار تا کمر قوس نگیرد.",
+ "مستقیم بالا فشار بده. دمبل‌ها در بالا کمی به هم نزدیک می‌شوند ولی برخورد نمی‌کنند.",
+ "آرنج را در بالا کاملاً قفل نکن.",
+ "در دو ثانیه پایین بیاور تا دمبل‌ها هم‌سطح گوش شوند."],
+ cues:["گردن خنثی؛ سر را به جلو نده.","اگر کمرت قوس می‌گیرد، وزنه سنگین است."],
+ err:["پرس از پشت گردن — این حرکت به‌طور کامل از برنامهٔ تو حذف شده است.","استفاده از پا و کمر برای پرتاب وزنه.","پایین آوردن بیش از حد و فشار به مفصل شانه."],
+ breath:"در فشار بالا بازدم، در پایین آوردن دم.",
+ target:"دلت (قدامی و میانی)، پشت‌بازو",
+ swap:"پرس سرشانه دستگاه با گریپ خنثی"},
+
+lateral:{ن:"نشر جانب دمبل", eq:"فقط دمبل",
+ setup:"بایست، پاها به عرض لگن، دمبل‌های سبک کنار بدن. کمی از لگن به جلو خم شو (حدود ۱۰ درجه) — این دلت میانی را بهتر هدف می‌گیرد.",
+ steps:["آرنج‌ها را کمی خم کن و در همین زاویه ثابت نگه دار.",
+ "دست‌ها را به طرفین بالا بیاور تا هم‌سطح شانه — نه بالاتر.",
+ "آرنج همیشه کمی بالاتر از مچ باشد. تصور کن داری یک پارچ آب را خالی می‌کنی.",
+ "یک ثانیه در بالا نگه دار، بعد در دو ثانیه آرام پایین بیاور بدون اینکه دست‌ها به بدن بخورند."],
+ cues:["این حرکت پرارزش‌ترین حرکت برنامهٔ توست برای عرض شانه. سبک ولی تمیز بزن.","شانه‌ها را به سمت گوش بالا نکش — ذوزنقه نباید کار را بدزدد."],
+ err:["تاب دادن بدن برای بالا آوردن وزنه. اگر تاب می‌دهی، وزنه سنگین است.","بالا بردن دمبل بالاتر از خط شانه — بار به ذوزنقه منتقل می‌شود.","رها کردن سریع در فاز پایین."],
+ breath:"در بالا آوردن بازدم، در پایین آوردن دم.",
+ target:"دلت میانی (عرض شانه)",
+ swap:"نشر جانب کابل تک‌دست یا دستگاه نشر"},
+
+lateralcable:{ن:"نشر جانب کابل تک‌دست", eq:"کابل",
+ setup:"کابل را روی پایین‌ترین قرقره ببند. پهلو به دستگاه بایست و دستگیره را با دست دور از دستگاه بگیر (کابل از جلوی بدنت رد می‌شود).",
+ steps:["با دست آزاد به دستگاه تکیه بده تا بدن ثابت بماند.",
+ "دست را در قوسی به سمت بیرون و بالا ببر تا هم‌سطح شانه.",
+ "دو ثانیه در بالا نگه دار — کابل بر خلاف دمبل در اینجا هم تنش دارد.",
+ "خیلی آرام پایین بیاور. تمام ست را روی یک دست کامل کن."],
+ cues:["مزیت کابل نسبت به دمبل: تنش در پایین حرکت هم حفظ می‌شود. برای همین به‌عنوان حرکت پایانی انتخاب شده.","خیلی سبک بگیر — هدف تنش و پامپ است."],
+ err:["استفاده از کل بدن برای بالا آوردن.","سنگین گرفتن و کوتاه کردن دامنه."],
+ breath:"در بالا آوردن بازدم، در پایین آوردن دم.",
+ target:"دلت میانی",
+ swap:"کش مقاومتی زیر پا"},
+
+cablefly:{ن:"فلای کابل / پک‌دک", eq:"کابل یا پک‌دک",
+ setup:"دو قرقره را هم‌سطح سینه یا کمی بالاتر تنظیم کن. یک قدم جلو بیا تا کشش از ابتدا وجود داشته باشد.",
+ steps:["دست‌ها را باز کن، آرنج کمی خم و در همین زاویه ثابت.",
+ "سینه را بالا و کتف‌ها را جمع نگه دار.",
+ "دست‌ها را در یک قوس به سمت جلو و وسط بیاور، انگار می‌خواهی کسی را بغل کنی.",
+ "در وسط یک ثانیه سینه را فشار بده، بعد در دو ثانیه باز کن تا کشش کامل."],
+ cues:["آرنج در کل حرکت در همان زاویه می‌ماند. اگر باز و بسته شود، تبدیل به پرس می‌شود.","کشش انتهایی را کامل کن ولی نه تا حدی که در جلوی شانه درد حس کنی."],
+ err:["تبدیل کردن حرکت به پرس با خم و راست کردن آرنج.","جلو دادن شانه‌ها در انتهای بستن."],
+ breath:"در بستن بازدم، در باز کردن دم.",
+ target:"سینه (خصوصاً بخش داخلی و کشش)",
+ swap:"دستگاه پک‌دک یا فلای دمبل روی میز صاف"},
+
+pushdown:{ن:"پشت‌بازو سیم‌کش طنابی", eq:"کابل",
+ setup:"طناب را به قرقرهٔ بالا ببند. یک قدم عقب بیا و کمی از لگن به جلو خم شو. آرنج‌ها را به پهلو بچسبان.",
+ steps:["آرنج‌ها در کل حرکت در یک نقطه ثابت‌اند — این مهم‌ترین نکته است.",
+ "طناب را به پایین باز کن تا آرنج کاملاً صاف شود.",
+ "در انتها دو سر طناب را از هم باز کن و یک ثانیه پشت‌بازو را فشار بده.",
+ "آرام برگرد تا کشش کامل، بدون اینکه آرنج جلو بیاید."],
+ cues:["فقط ساعد حرکت می‌کند.","باز کردن طناب در انتها، سر خارجی پشت‌بازو را بیشتر درگیر می‌کند."],
+ err:["جلو و عقب رفتن آرنج.","خم شدن بیش از حد بالاتنه و استفاده از وزن بدن."],
+ breath:"در پایین بردن بازدم، در برگشت دم.",
+ target:"پشت‌بازو",
+ swap:"پشت‌بازو دیپ روی نیمکت"},
+
+squat:{ن:"اسکوات (هالتر پشت یا هک دستگاه)", eq:"هالتر یا دستگاه هک",
+ setup:"هالتر روی عضلات پشت شانه، نه روی مهرهٔ گردن. پاها کمی بازتر از عرض شانه، پنجه‌ها ۱۵ تا ۳۰ درجه رو به بیرون. اگر هک دستگاه می‌زنی، پشت کاملاً به پد بچسبد.",
+ steps:["نفس بگیر، شکم را ۳۶۰ درجه سفت کن (نه فقط تو کشیدن)، سینه بالا.",
+ "هم‌زمان از لگن و زانو خم شو. باسن به عقب و پایین می‌رود.",
+ "تا جایی پایین برو که ران موازی زمین یا کمی پایین‌تر برسد — به شرطی که کمر گرد نشود و پاشنه از زمین بلند نشود.",
+ "از وسط پا فشار بده و بالا بیا. زانوها را در مسیر پنجه‌ها نگه دار، به داخل نریزند."],
+ cues:["نگاه به جلو و کمی پایین. سر را بالا نگیر.","زانوها را فعالانه به بیرون فشار بده.","چون مدتی است اسکوات نزده‌ای، چند هفتهٔ اول فقط با میلهٔ خالی و وزنهٔ سبک روی تکنیک کار کن. عجله برای وزنه، اینجا هزینه دارد."],
+ err:["گرد شدن کمر در پایین (Butt Wink) — یعنی از دامنهٔ راحت خودت پایین‌تر رفته‌ای.","ریختن زانوها به داخل هنگام بالا آمدن.","بلند شدن پاشنه از زمین — نشانهٔ محدودیت تحرک مچ پا. کفش با پاشنه یا صفحهٔ کوچک زیر پاشنه کمک می‌کند.","حبس طولانی نفس زیر وزنهٔ سنگین."],
+ breath:"در بالا نفس بگیر، در پایین رفتن نگه دار، در نیمهٔ بالا آمدن بازدم کن. با توجه به سابقهٔ جراحی شکمت، دربارهٔ حبس نفس زیر وزنهٔ سنگین حتماً با پزشکت مشورت کن و تا آن موقع با وزنه‌های متوسط و تنفس پیوسته کار کن.",
+ target:"چهارسر، سرین، همسترینگ، کور",
+ swap:"هک اسکوات دستگاه، اسکوات اسمیت، یا پرس پا — هر سه پشت را ساپورت می‌کنند و فشار داخل‌شکمی کمتری می‌سازند"},
+
+legpress:{ن:"پرس پا", eq:"دستگاه پرس پا",
+ setup:"پاها به عرض شانه در وسط صفحه. کمر و باسن کاملاً به پد چسبیده — این مهم‌ترین نکتهٔ ایمنی این حرکت است.",
+ steps:["قفل دستگاه را باز کن و دستگیره‌ها را بگیر.",
+ "در دو ثانیه پایین بیاور تا زانو حدود ۹۰ درجه خم شود.",
+ "لحظه‌ای که باسنت شروع به بلند شدن از پد کرد، انتهای دامنهٔ توست — پایین‌تر نرو.",
+ "از پاشنه فشار بده و بالا ببر، بدون قفل کردن کامل زانو."],
+ cues:["پا را بالاتر روی صفحه بگذاری، سرین و همسترینگ بیشتر؛ پایین‌تر، چهارسر بیشتر. برای هدف تو پایین‌تر بگذار.","زانو در مسیر پنجه بماند."],
+ err:["پایین آوردن بیش از حد و بلند شدن کمر از پد — پرخطرترین اشتباه این دستگاه.","قفل کردن ناگهانی زانو در بالا.","برداشتن دست از دستگیره‌ها."],
+ breath:"در پایین آوردن دم، در فشار بالا بازدم. حبس نفس طولانی نکن.",
+ target:"چهارسر، سرین",
+ swap:"هک اسکوات یا اسکوات گابلت"},
+
+legext:{ن:"جلوپا دستگاه (Leg Extension)", eq:"دستگاه جلوپا",
+ setup:"پشت را به پد بچسبان. محور چرخش زانو هم‌راستای محور دستگاه. پد روی پایین ساق، بالای مچ.",
+ steps:["دستگیره‌ها را بگیر و باسن را روی صندلی ثابت کن.",
+ "پاها را در یک ثانیه بالا ببر تا زانو تقریباً صاف شود.",
+ "یک تا دو ثانیه در بالا منقبض کن و چهارسر را فشار بده.",
+ "در دو ثانیه پایین بیاور، بدون اینکه وزنه روی پایه بنشیند."],
+ cues:["این حرکت تقریباً هیچ فشار داخل‌شکمی تولید نمی‌کند — امن‌ترین راه برای حجم دادن به چهارسر در برنامهٔ توست.","مکث در بالا را جدی بگیر؛ اثر اصلی حرکت همان‌جاست."],
+ err:["تاب دادن و بالا انداختن وزنه.","بلند کردن باسن از صندلی."],
+ breath:"در بالا بردن بازدم، در پایین آوردن دم.",
+ target:"چهارسر (هر چهار سر، خصوصاً پهن داخلی)",
+ swap:"اکستنشن با کش دور مچ پا در حالت نشسته"},
+
+lunge:{ن:"لانج راه‌رونده", eq:"دمبل یا بدون وزنه",
+ setup:"دمبل‌ها کنار بدن یا بدون وزنه. فضای باز حدود ۱۰ متر.",
+ steps:["یک قدم بلند به جلو بردار.",
+ "پایین برو تا زانوی عقب نزدیک زمین برسد و ران جلو موازی زمین شود.",
+ "از پاشنهٔ پای جلو فشار بده و مستقیم بالا بیا.",
+ "بدون توقف، قدم بعدی را با پای دیگر بردار."],
+ cues:["بالاتنه صاف و عمود بماند؛ به جلو خم نشو.","قدم بلندتر = سرین بیشتر، قدم کوتاه‌تر = چهارسر بیشتر."],
+ err:["کوتاه برداشتن قدم و فشار زیاد به زانوی جلو.","افتادن زانوی جلو به داخل."],
+ breath:"در پایین رفتن دم، در بالا آمدن بازدم.",
+ target:"چهارسر، سرین، همسترینگ",
+ swap:"لانج ثابت در جا یا استپ‌آپ"},
+
+calfseat:{ن:"ساق نشسته", eq:"دستگاه ساق نشسته",
+ setup:"بنشین، پنجه روی صفحه، پد روی پایین ران نزدیک زانو (نه روی خود زانو).",
+ steps:["پاشنه را کامل پایین بده و دو ثانیه در کشش بمان.",
+ "تا بالاترین نقطه روی پنجه بلند شو.",
+ "یک ثانیه در بالا نگه دار.",
+ "آرام پایین بیاور."],
+ cues:["ساق نشسته با زانوی خم، عضلهٔ نعلی را هدف می‌گیرد — مکمل ساق ایستاده است، تکرار آن نیست.","تکرار بالا و دامنهٔ کامل، کلید رشد ساق است."],
+ err:["نیم‌دامنه زدن با وزنهٔ سنگین.","حرکت فنری و سریع."],
+ breath:"در بالا رفتن بازدم، در پایین آمدن دم.",
+ target:"نعلی (سولئوس)، دوقلو",
+ swap:"ساق نشسته با دمبل روی ران"},
+
+kneeraise:{ن:"بالاآوردن زانو از بارفیکس", eq:"بارفیکس",
+ setup:"از میله آویزان شو با گریپ به عرض شانه. شانه‌ها را فعال نگه دار (کمی به پایین بکش) — کاملاً شل آویزان نشو.",
+ steps:["قبل از شروع، لگن را کمی به سمت جلو بچرخان تا کمر صاف شود.",
+ "زانوها را به سمت سینه بالا بیاور، بدون هیچ تابی.",
+ "در بالا یک ثانیه شکم را فشار بده.",
+ "در دو ثانیه آرام پایین بیاور تا موقعیت شروع، بدون اینکه بدن شروع به تاب خوردن کند."],
+ cues:["حرکت باید از جمع شدن لگن بیاید، نه از خم شدن ران. اگر فقط زانو بالا می‌آید و لگن نمی‌چرخد، شکم کار نمی‌کند.","اگر بدنت تاب می‌خورد، تعداد را کم کن و آهسته‌تر بزن."],
+ err:["تاب دادن بدن برای بالا آوردن پا.","پایین انداختن سریع پاها."],
+ breath:"در بالا آوردن بازدم، در پایین بردن دم.",
+ target:"شکم (بخش پایینی)، خم‌کننده‌های ران",
+ swap:"بالاآوردن زانو روی دستگاه پارالل با ساپورت آرنج"},
+
+pullup:{ن:"بارفیکس (یا لت دست‌جمع)", eq:"بارفیکس",
+ setup:"میله را کمی بازتر از عرض شانه بگیر، شست دور میله. اگر بارفیکس نمی‌توانی، لت پول‌داون دست‌جمع جایگزین است.",
+ steps:["از حالت آویزان کامل شروع کن، ولی شانه‌ها را فعال نگه دار.",
+ "اول شانه‌ها را پایین بکش، بعد آرنج‌ها را به سمت پهلو بکش.",
+ "بالا برو تا چانه از میله بگذرد. سینه به سمت میله بیاید.",
+ "در سه ثانیه کنترل‌شده پایین بیا تا کشش کامل."],
+ cues:["فاز منفی کنترل‌شده، بیشترین سهم را در رشد لت دارد. اگر ۱۰ تا می‌زنی، ۶ تای تمیز با فاز منفی ۳ ثانیه‌ای بهتر است.","به عقب قوس نده؛ بدن را نسبتاً صاف نگه دار."],
+ err:["نیم‌دامنه زدن و بالا نرفتن کامل.","استفاده از تاب پا (کیپینگ) برای بالا رفتن.","رها کردن سریع در پایین آمدن."],
+ breath:"در بالا رفتن بازدم، در پایین آمدن دم.",
+ target:"لتیسیموس، مرکز پشت، جلوبازو",
+ swap:"لت پول‌داون دست‌جمع، یا بارفیکس با کش زیر پا"},
+
+revpecdeck:{ن:"پک‌دک معکوس (دلت خلفی)", eq:"دستگاه پک‌دک",
+ setup:"رو به پد بنشین، سینه به تکیه‌گاه چسبیده. دستگیره‌ها را با گریپ خنثی یا کف دست رو به پایین بگیر، بازوها جلو و کمی خم.",
+ steps:["سینه را در کل ست به پد چسبیده نگه دار.",
+ "دست‌ها را در قوسی به طرفین باز کن تا هم‌سطح شانه.",
+ "در انتها یک تا دو ثانیه کتف‌ها را جمع کن و دلت خلفی را فشار بده.",
+ "در دو ثانیه آرام برگردان بدون اینکه وزنه‌ها به هم بخورند."],
+ cues:["زاویهٔ آرنج ثابت بماند؛ آن را باز و بسته نکن.","سبک بزن. دلت خلفی عضلهٔ کوچکی است و با وزنهٔ سنگین، ذوزنقه کار را می‌دزدد."],
+ err:["بلند شدن سینه از پد.","بالا کشیدن شانه‌ها به سمت گوش.","استفاده از پشت به‌جای دلت خلفی — اگر بین کتف‌ها را حس می‌کنی نه پشت شانه، سبک‌تر کن."],
+ breath:"در باز کردن بازدم، در برگشت دم.",
+ target:"دلت خلفی، ذوزنقهٔ میانی (قامت)",
+ swap:"فلای معکوس دمبل روی میز شیب‌دار با سینه تکیه‌داده"},
+
+bentlateral:{ن:"نشر خم دمبل", eq:"دمبل + میز شیب‌دار",
+ setup:"از لگن خم شو تا بالاتنه تقریباً موازی زمین، یا سینه را روی میز شیب‌دار ۴۵ درجه تکیه بده (توصیه‌شده — کمر را کاملاً آزاد می‌کند).",
+ steps:["دمبل‌های سبک را آویزان نگه دار، آرنج کمی خم و ثابت.",
+ "دست‌ها را مثل بال به طرفین باز کن تا هم‌سطح شانه.",
+ "یک ثانیه در بالا نگه دار.",
+ "در دو ثانیه آرام پایین بیاور."],
+ cues:["انگشت کوچک را کمی بالاتر از شست نگه دار — دلت خلفی را بهتر هدف می‌گیرد.","بالاتنه در کل ست بی‌حرکت است."],
+ err:["بالا آوردن بالاتنه هم‌زمان با باز کردن دست‌ها.","سنگین گرفتن و تبدیل شدن به روئینگ."],
+ breath:"در باز کردن بازدم، در پایین آوردن دم.",
+ target:"دلت خلفی",
+ swap:"نشر خم کابل ضربدری"},
+
+ezcurl:{ن:"جلوبازو هالتر EZ", eq:"هالتر EZ",
+ setup:"هالتر EZ را روی زاویهٔ داخلی بگیر (کف دست رو به بالا و کمی مایل — این زاویه فشار مچ را کم می‌کند). عرض گریپ حدود عرض شانه.",
+ steps:["بایست، آرنج‌ها کنار بدن، شکم سفت.",
+ "بدون تاب دادن بدن، هالتر را در یک ثانیه بالا بیاور.",
+ "در بالا یک ثانیه منقبض کن. آرنج را جلو نیاور.",
+ "در سه ثانیه پایین ببر تا آرنج تقریباً صاف شود."],
+ cues:["پشت را به دیوار تکیه بده اگر تاب می‌دهی — تقلب را کاملاً حذف می‌کند.","فاز منفی سه‌ثانیه‌ای، اصل حرکت است."],
+ err:["تاب دادن کمر برای بالا آوردن.","جلو آوردن آرنج در نیمهٔ بالایی.","صاف نکردن کامل دست در پایین."],
+ breath:"در بالا آوردن بازدم، در پایین بردن دم.",
+ target:"جلوبازو",
+ swap:"جلوبازو دمبل ایستاده یا کابل"},
+
+hammer:{ن:"جلوبازو چکشی", eq:"فقط دمبل",
+ setup:"دمبل‌ها کنار بدن با گریپ خنثی — شست رو به بالا، مثل گرفتن چکش. این گریپ در کل حرکت ثابت می‌ماند.",
+ steps:["آرنج‌ها کنار بدن، بدون چرخش مچ بالا بیاور.",
+ "می‌توانی هم‌زمان یا یکی‌درمیان بزنی.",
+ "در بالا یک ثانیه نگه دار.",
+ "آرام پایین بیاور تا کشش کامل."],
+ cues:["این حرکت بازویی‌قدامی را هدف می‌گیرد که زیر جلوبازو قرار دارد — رشدش بازو را ضخیم‌تر نشان می‌دهد.","ساعد را هم قوی می‌کند که به گریپ بارفیکس و ددلیفتت کمک می‌کند."],
+ err:["تاب دادن بدن.","چرخاندن مچ در نیمهٔ راه."],
+ breath:"در بالا آوردن بازدم، در پایین بردن دم.",
+ target:"بازویی‌قدامی، جلوبازو، ساعد",
+ swap:"جلوبازو چکشی کابل با طناب"},
+
+ohtricep:{ن:"پشت‌بازو بالای سر (دمبل یا طناب)", eq:"دمبل یا کابل",
+ setup:"یک دمبل را با دو دست از صفحهٔ بالایی بگیر و بالای سر ببر، یا از کابل با طناب و رو به مخالف دستگاه استفاده کن.",
+ steps:["بازوها را کنار گوش و عمود بر زمین نگه دار — این نقطهٔ ثابت حرکت است.",
+ "دمبل را در دو ثانیه پشت سر پایین ببر تا کشش کامل در پشت‌بازو.",
+ "در انتهای کشش لحظه‌ای مکث کن.",
+ "با فشار پشت‌بازو صاف کن، بدون اینکه آرنج به طرفین باز شود."],
+ cues:["این حرکت سر بلند پشت‌بازو را هدف می‌گیرد که فقط در حالت کشش بالای سر فعال می‌شود — مکمل پشت‌بازو طنابی است.","آرنج‌ها را به هم نزدیک نگه دار."],
+ err:["باز شدن آرنج‌ها به طرفین.","قوس دادن کمر برای بردن وزنه به عقب.","سنگین گرفتن — مفصل آرنج در این حالت آسیب‌پذیرتر است."],
+ breath:"در پایین بردن دم، در صاف کردن بازدم.",
+ target:"پشت‌بازو (سر بلند)",
+ swap:"پشت‌بازو خوابیده با EZ (اسکال کراشر)"},
+
+backext:{ن:"هایپراکستنشن (Back Extension)", eq:"دستگاه هایپراکستنشن",
+ setup:"روی دستگاه ۴۵ درجه یا افقی. لبهٔ بالایی پد باید کمی زیر استخوان لگن باشد، نه روی شکم. مچ پا محکم زیر غلتک.",
+ steps:["دست‌ها را روی سینه ضربدری کن یا کنار شقیقه بگذار.",
+ "از لگن خم شو و پایین برو تا کشش همسترینگ، کمر صاف بماند.",
+ "با فشار سرین و همسترینگ بالا بیا تا بدن یک خط صاف شود.",
+ "در بالا متوقف شو — قوس ندادن به عقب مهم‌ترین نکتهٔ ایمنی این حرکت است."],
+ cues:["اگر می‌خواهی سرین بیشتر درگیر شود، پنجه‌ها را به بیرون بچرخان و چانه را کمی جمع کن.","تا وقتی وزن بدن راحت است، وزنه اضافه نکن."],
+ err:["قوس دادن بیش از حد کمر در بالا (هایپراکستنشن واقعی) — همان چیزی که باید از آن پرهیز کنی.","حرکت سریع و فنری."],
+ breath:"در پایین رفتن دم، در بالا آمدن بازدم.",
+ target:"فیلهٔ کمر، سرین، همسترینگ",
+ swap:"Cable Pull-Through یا گلوت بریج"}
+
+};
+
+/* ---------- برنامهٔ هفتگی ---------- */
+const days = [
+  { key:"sat", day:"شنبه", wd:6, type:"train", title:"پشت و کشش انفجاری", focus:"لتس · ماسل‌آپ · قامت",
+    warm:"۳ دقیقه دوچرخه یا طناب · Band Pull-Apart ۲×۲۰ · Cat-Cow ۱۰ · آویزان از بارفیکس ۲×۲۰ ثانیه",
+    ex:[ ["explosivepull",4,"۳–۵",120,"انفجاری","اول جلسه — سرحال"],
+         ["pulldown",3,"۸–۱۲",90,"2-1-2-1",""],
+         ["cablerow",4,"۱۰–۱۲",90,"2-1-2-1",""],
+         ["chestrow",3,"۱۰–۱۲",75,"2-0-2-1","سینه از میز بلند نشود"],
+         ["pullover",2,"۱۲–۱۵",60,"3-1-1-1",""],
+         ["facepull",3,"۱۵–۲۰",60,"2-1-2-2","کلیدی برای قامت"],
+         ["inclinecurl",3,"۱۰–۱۲",60,"3-0-1-1",""],
+         ["deadbug",2,"۱۰ هر طرف",45,"آهسته",""] ]},
+
+  { key:"sun", day:"یک‌شنبه", wd:0, type:"train", title:"پا — زنجیرهٔ خلفی", focus:"همسترینگ · سرین · ساق",
+    warm:"۵ دقیقه دوچرخه یا پله · Leg Swing ۱۰ هر طرف · گلوت بریج وزن بدن ۲×۱۵ · هایپراکستنشن بدون وزنه ۱۰",
+    ex:[ ["rdl",4,"۶–۸",150,"3-1-1-0","گردن خنثی، کمر صاف"],
+         ["bulgarian",4,"۸–۱۰ هر پا",90,"2-1-1-0",""],
+         ["legcurl",3,"۱۰–۱۲",75,"2-1-2-1",""],
+         ["hipthrust",3,"۱۰–۱۲",90,"2-2-1-1",""],
+         ["backext",3,"۱۲–۱۵",60,"2-1-2-1","در بالا قوس نده"],
+         ["calfstand",4,"۱۲–۱۵",60,"2-1-2-2",""],
+         ["pallof",3,"۱۲ هر طرف",45,"کنترل","ضدچرخش — کمر را ضخیم نمی‌کند"] ]},
+
+  { key:"mon", day:"دوشنبه", wd:1, type:"train", title:"ماسل‌آپ — جلسهٔ مهارتی", focus:"~۳۰ دقیقه · جدا از برنامهٔ اصلی",
+    warm:"۵ دقیقه دوچرخه · Band Pull-Apart ۲×۲۰ · آویزان از بارفیکس ۲×۲۰ ثانیه · ۵ بارفیکس سبک · چرخش شانه و آرنج",
+    ex:[ ["mufull",4,"۱–۳",180,"انفجاری","سرحال‌ترین لحظه — اول از همه"],
+         ["boxmu",4,"۲–۳ هر پا",120,"کنترل","هر هفته کمک پا را کم کن"],
+         ["bardip",3,"۶–۸",90,"2-1-1-0","اگر راحت شد وزنه اضافه کن"] ]},
+
+  { key:"tue", day:"سه‌شنبه", wd:2, type:"train", title:"سینه و سرشانه", focus:"بالاسینه · دلت میانی · ایمن برای گردن",
+    warm:"Band Pull-Apart ۲×۲۰ · چرخش شانه ۱۰ هر طرف · شنای سبک ۱۵ تکرار",
+    ex:[ ["inclinedb",4,"۶–۸",120,"3-1-1-0",""],
+         ["flatdb",3,"۱۰–۱۲",90,"2-1-2-0",""],
+         ["ohpdb",3,"۸–۱۰",90,"2-0-2-0","هرگز پشت‌گردن"],
+         ["lateral",4,"۱۲–۱۵",60,"2-0-1-1","حجم بالا — اولویت جدید"],
+         ["lateralcable",2,"۱۵–۲۰",45,"2-0-1-2",""],
+         ["cablefly",3,"۱۲–۱۵",60,"2-1-2-1",""],
+         ["pushdown",3,"۱۰–۱۲",60,"2-0-1-1",""] ]},
+
+  { key:"wed", day:"چهارشنبه", wd:3, type:"train", title:"چهارسر و دلت میانی", focus:"چهارسر · همسترینگ (نوبت دوم) · عرض شانه",
+    warm:"۵ دقیقه دوچرخه · اسکوات وزن بدن ۲×۱۵ · تحرک مچ پا ۱۰ هر طرف · Leg Swing ۱۰ هر طرف",
+    ex:[ ["squat",4,"۶–۸",150,"3-1-1-0","چند هفتهٔ اول فقط تکنیک"],
+         ["legpress",3,"۱۰–۱۲",120,"2-1-1-0","کمر به پد چسبیده بماند"],
+         ["legext",3,"۱۲–۱۵",60,"2-1-2-1",""],
+         ["legcurl",3,"۱۰–۱۲",75,"2-1-2-1","فرکانس دوم همسترینگ"],
+         ["lateral",4,"۱۲–۱۵",60,"2-0-1-1",""],
+         ["calfseat",3,"۱۵–۲۰",45,"2-1-2-2",""],
+         ["kneeraise",3,"۱۲–۱۵",60,"کنترل","بدون تاب"] ]},
+
+  { key:"thu", day:"پنج‌شنبه", wd:4, type:"train", title:"بالاتنهٔ کمکی و قامت", focus:"دلت خلفی · بازو · قامت",
+    warm:"Band Pull-Apart ۲×۲۰ · Wall Slide ۲×۱۰ · گرم‌کردن آرنج و مچ",
+    ex:[ ["pullup",3,"۶–۱۰",120,"2-0-3-1",""],
+         ["revpecdeck",4,"۱۵–۲۰",60,"2-1-2-1","قامت"],
+         ["bentlateral",3,"۱۵",60,"2-1-2-1",""],
+         ["ezcurl",3,"۸–۱۰",75,"3-0-1-1",""],
+         ["hammer",3,"۱۰–۱۲",60,"2-0-1-1",""],
+         ["ohtricep",3,"۱۰–۱۲",60,"2-0-2-1",""],
+         ["pallof",3,"۱۲ هر طرف",45,"کنترل",""] ]},
+
+  { key:"fri", day:"جمعه", wd:5, type:"rest", title:"استراحت کامل",
+    rest:"خواب کافی · آب · کشش سبک. روز ریکاوری اصلی هفته." },
+];
+
+
+/* ================= panels ================= */
+const info = [
+  { t:"اضافه‌بار تدریجی", body:`<ul>
+    <li><strong>پیشرفت دوگانه:</strong> داخل بازهٔ تکرار کار کن؛ وقتی در <em>همهٔ</em> ست‌ها به سقف بازه رسیدی، کمترین وزنهٔ ممکن (۱ تا ۲.۵ کیلو) اضافه کن و از کف بازه شروع کن.</li>
+    <li><span class="hi">وزنهٔ هر حرکت را در فیلد «وزنه» ثبت کن.</span> بدون ثبت، نمی‌فهمی پیشرفت کرده‌ای یا نه.</li>
+    <li>اکثر ست‌ها با <strong>۱ تا ۲ تکرار باقی‌مانده</strong> (RIR ۱–۲). ست آخر هر حرکت می‌تواند نزدیک ناتوانی برود.</li>
+    <li>هر ۵ تا ۶ هفته یک هفتهٔ <strong>دیلود</strong>: همان حرکات، نصف ست‌ها، وزنهٔ ۶۰٪.</li>
+    <li><span class="hi">اسکوات:</span> چون مدتی نزده‌ای، ۳ تا ۴ هفتهٔ اول عمداً سبک بمان و فقط روی تکنیک کار کن. بعد شروع به اضافه کردن کن.</li></ul>` },
+
+  { t:"اصلاح قامت", body:`از عکس نیم‌رخ، مسئلهٔ اصلی <span class="hi">سر جلوآمده و شانهٔ جمع‌شده</span> است، نه قوز ساختاری ستون فقرات. این الگو با تمرین برگشت‌پذیر است — معمولاً در ۳ تا ۶ ماه.
+    <br><br>اصل کار: <span class="hi">جلو را بکش، پشت را تقویت کن.</span>
+    <br>تقویت (داخل برنامه): Face Pull، پک‌دک معکوس، نشر خم، انواع روئینگ.
+    <strong>روزانه (۵ دقیقه، حتی روز استراحت):</strong>
+    <ul><li><strong>Chin Tuck</strong>: ۳×۱۰ — مهم‌ترین حرکت برای سر جلوآمده</li>
+    <li>کشش سینه در چارچوب در: ۳×۳۰ ثانیه</li>
+    <li>اکستنشن ستون فقرات سینه‌ای روی فوم‌رولر: ۲ دقیقه</li>
+    <li>Wall Slide: ۲×۱۰</li>
+    <li>آگاهی از وضعیت بدن پشت میز و موبایل — <strong>مهم‌تر از خودِ تمرین</strong></li></ul>
+    <em style="color:var(--faint);font-size:11px">تفکیک قوز ساختاری از وضعیتی نیاز به معاینهٔ فیزیوتراپ دارد.</em>` },
+
+  { t:"چرا این نسخه عوض شد؟", body:`از برنامهٔ اول تا اینجا، حجم هفتگی از <strong>۱۲۷ به ۱۱۹ ست</strong> رسیده — کمی سبک‌تر، ولی خیلی متفاوت توزیع‌شده.
+    <ul><li><span class="hi">چهارسر: ۵ ← ۱۴ ست.</span> قبلاً هیچ حرکت مستقیمی نداشت. روز چهارشنبه از صفر ساخته شد.</li>
+    <li><span class="hi">لتس و پشت: ۱۱ ← ۱۸ ست.</span></li>
+    <li><span class="hi">دلت میانی: ۷ ← ۱۰ ست.</span> عرض شانه، کمر را باریک‌تر نشان می‌دهد — بدون هیچ رژیمی.</li>
+    <li><span class="hi">شکم و کور: ۳۰ ← ۱۱ ست.</span> Cable Woodchop و کرانچ وزنه‌دار حذف شدند؛ چرخش بارگذاری‌شده مورب‌ها را ضخیم می‌کند. آنچه ماند (Pallof، Dead Bug) ایزومتریک و ضدچرخش است.</li>
+    <li>جلوبازو: ۱۷ ← ۹ · دلت خلفی: ۱۷ ← ۱۰ (هنوز برای قامت کافی).</li>
+    <li>همسترینگ و سرین: ۱۶ ست، ولی حالا <span class="hi">در دو جلسه</span> به‌جای یکی.</li></ul>
+    <strong>اصل مهم این نسخه: فرکانس.</strong> تقریباً هر گروه عضلانی حالا <span class="hi">دو بار در هفته</span> تمرین می‌شود، نه یک بار. پخش‌کردن همان حجم روی دو جلسه، بازدهٔ بیشتری از تمرکز همه‌اش در یک روز دارد.
+    <br><br><strong>پشت ران نشسته، نه خوابیده:</strong> در حالت نشسته لگن خم است و همسترینگ در دامنهٔ کشیده بار می‌گیرد — همان تعداد ست، تحریک بیشتر.
+    <br><br><em style="color:var(--faint);font-size:11px">تمرین شکم چربی شکم را کم نمی‌کند. فقط عضلهٔ زیرش را می‌سازد.</em>` },
+
+  { t:"هوازی — چرا و کِی", body:`<strong>دلیل اصلی هوازی، چربی نیست.</strong> آمادگی قلبی-تنفسی یکی از قوی‌ترین پیش‌بینی‌کننده‌های سلامت بلندمدت است — <span class="hi">قوی‌تر از درصد چربی بدن</span>. چربی تو الان در محدودهٔ خوبی است؛ ظرفیت قلبی، بخش گمشدهٔ پازل است.
+    <br><br><strong>اثر تداخل:</strong> هوازی می‌تواند سازگاری حجم و قدرت را کم کند، و بیشترین تداخل دقیقاً روی <span class="hi">پایین‌تنه</span> است. حالا که چهارسر اولویت اول شده، جاگذاری مهم‌تر از همیشه است.
+    <ul><li><strong>هیچ‌وقت قبل از وزنه.</strong></li>
+    <li><strong>یک‌شنبه و چهارشنبه (روزهای پا): هوازی سنگین ممنوع.</strong> پیاده‌روی سبک اشکالی ندارد.</li>
+    <li><strong>شنبه، سه‌شنبه، پنج‌شنبه:</strong> بعد از وزنه، ۱۵ تا ۲۵ دقیقه سبک. «سبک» یعنی بتوانی حین انجامش حرف بزنی.</li>
+    <li><strong>یک جلسهٔ اینتروال اختیاری در هفته</strong> (دوشنبه یا جمعه) — این همان چیزی است که ظرفیت قلبی را واقعاً بالا می‌برد.</li>
+    <li><strong>طناب:</strong> برای ساق و قوزک شدید است و ضربهٔ زیادی دارد. روزهای پا کنارش بگذار.</li></ul>
+    <strong>پیاده‌روی روزانه، بالاترین ارزش را دارد:</strong> اشتها را مثل هوازی شدید بالا نمی‌برد، هزینهٔ ریکاوری ندارد، و با روز پا تداخل نمی‌کند.
+    <br><br><em style="color:var(--gold);font-size:11.5px">هیچ‌وقت هوازی را برای جبران یک شب پرخوری اضافه نکن. هوازی یک بخش ثابت از هفته است، نه واکنش به دیشب.</em>` },
+
+  { t:"مسیر ماسل‌آپ", body:`تو از مرحلهٔ «یاد گرفتن الگو» گذشته‌ای. ماسل‌آپ جعبه با کمک تک‌پا یعنی <span class="hi">گذر را بلدی</span> — و گذر سخت‌ترین بخش است. آنچه مانده کم‌کردن تدریجی کمک است، نه یادگیری حرکت.
+    <br><br><strong>جلسهٔ دوشنبه، ~۳۰ دقیقه، جدا از برنامهٔ اصلی:</strong>
+    <ul><li><strong>تلاش کامل</strong> ۴×۱–۳ — اول از همه، سرحال‌ترین لحظه.</li>
+    <li><strong>ماسل‌آپ جعبه</strong> ۴×۲–۳ هر پا — با کمک کمتر از هفتهٔ قبل.</li>
+    <li><strong>دیپ میلهٔ صاف</strong> ۳×۶–۸ — چون بالای ۵ می‌زنی، از این به بعد وزنه اضافه کن.</li></ul>
+    <strong>نردبان کم‌کردن کمک — معیار اصلی پیشرفتت:</strong>
+    <ul><li>فشار کامل پا</li><li>فشار نصفه</li><li>یک ضربهٔ سبک</li><li>فقط نوک پا در تماس</li><li>بدون تماس ← ماسل‌آپ کامل</li></ul>
+    وقتی با «فقط نوک پا» سه تکرار تمیز زدی، تمام است. <span class="hi">جعبهٔ کوتاه‌تر هم دقیقاً همین کار را می‌کند.</span>
+    <br><br><strong>دو نکتهٔ فنی که آخرین قدم را برمی‌دارد:</strong>
+    <ul><li>مسیر کشش <strong>قوسی</strong> است نه عمودی: کمی به عقب متمایل شو، میله را به سمت خودت بکش، بعد سینه را از روی میله به جلو بده. مثل چرخیدن دور میله، نه بالا رفتن از آن.</li>
+    <li><strong>شست را روی میله بگذار</strong>، نه دورش. اینطور موقع گذر مجبور نیستی مچ را زیاد بچرخانی. خیلی‌ها فقط با همین تغییر اولین ماسل‌آپشان را می‌زنند.</li></ul>
+    <em style="color:var(--gold);font-size:11.5px">هیچ‌وقت تلاش خسته نکن. کیفیت که افت کرد جلسه تمام است — تلاش با بدن خسته چیزی یاد نمی‌دهد و فقط آرنج را اذیت می‌کند.</em>` },
+
+  { t:"ایمنی گردن و کمر", danger:true, body:`<ul>
+    <li><strong>حذف کامل:</strong> پرس و لت پشت‌گردن، کول هالتر سنگین، چرخش بارگذاری‌شدهٔ تنه.</li>
+    <li><strong>جایگزین امن:</strong> پرس سرشانه دمبل با گریپ خنثی، لت از جلو، نشر جانب.</li>
+    <li>در RDL و روئینگ سر را بالا نکش؛ گردن هم‌راستا با ستون فقرات.</li>
+    <li>در حرکات شکم با دست سر را نکش.</li>
+    <li><strong>Chin Tuck</strong> روزانه، عضلات عمقی جلوی گردن را تقویت می‌کند.</li>
+    <li><strong>ماسل‌آپ کیپینگ</strong> (با ضربهٔ لگن) فشار انفجاری زیادی به تنه می‌آورد — آن را هم به فهرست سؤال از پزشکت اضافه کن. تا آن موقع فقط روی نسخه‌های کنترل‌شده (منفی و پرشی) کار کن.</li>
+    <li><strong>فشار داخل‌شکمی:</strong> حبس نفس زیر وزنهٔ سنگین بیشترین فشار را به دیوارهٔ شکم می‌آورد — بیشتر از خودِ انتخاب حرکت. اگر سابقهٔ جراحی شکم داری، دربارهٔ اسکوات، RDL، هایپراکستنشن، بالاآوردن پا و چرخ شکم با پزشکت مشورت کن.</li>
+    <li><strong>توقف و مراجعه به پزشک:</strong> درد تیز، تیر کشیدن به بازو یا پا، بی‌حسی یا گزگز. این برنامه جایگزین معاینهٔ حضوری نیست.</li></ul>` },
+];
+
+/* ---------- equipment audit ---------- */
+const EQP = [
+  { n:"دمبل (طیف کامل وزنی)", lvl:"must", use:"۱۲ حرکت — پرکاربردترین وسیلهٔ کل برنامه",
+    alt:"جایگزین ندارد. اگر باشگاه دمبل سنگین ندارد، همان وزنه‌ها را با تمپوی کندتر و تکرار بالاتر بزن." },
+  { n:"میز شیب‌دار قابل تنظیم", lvl:"must", use:"روئینگ سینه‌تکیه، پرس بالاسینه، جلوبازو شیب‌دار، نشر خم",
+    alt:"بدون آن، پرس بالاسینه و روئینگ سینه‌تکیه هر دو می‌افتند. اگر نبود بگو تا برنامه را عوض کنم." },
+  { n:"دستگاه سیم‌کش (قرقرهٔ بالا و پایین)", lvl:"must", use:"لت پول‌داون، قایقی، Face Pull، Pallof، پشت‌بازو، فلای، نشر کابل",
+    alt:"کش مقاومتی برای Face Pull و Pallof کافی است، ولی برای لت و قایقی نه." },
+  { n:"بارفیکس", lvl:"must", use:"بارفیکس، بالاآوردن زانو",
+    alt:"لت پول‌داون دست‌جمع + بالاآوردن زانو روی پارالل" },
+  { n:"هالتر + صفحه", lvl:"must", use:"RDL، اسکوات",
+    alt:"RDL با دمبل، و اسکوات با هک یا پرس پا" },
+  { n:"دستگاه پرس پا یا هک اسکوات", lvl:"nice", use:"روز چهارسر",
+    alt:"اسکوات هالتر یا گابلت اسکوات با دمبل" },
+  { n:"دستگاه جلوپا", lvl:"nice", use:"چهارسر — کم‌فشارترین حرکت برای شکم",
+    alt:"اکستنشن با کش دور مچ پا در حالت نشسته" },
+  { n:"دستگاه پشت ران — ترجیحاً نشسته", lvl:"nice", use:"همسترینگ، دو بار در هفته",
+    alt:"اگر فقط نوع خوابیده هست اشکالی ندارد، فقط کمی کم‌بازده‌تر است. اگر هیچ‌کدام نبود: Nordic Curl یا پل همسترینگ لغزشی." },
+  { n:"میلهٔ افقی هم‌قد کمر", lvl:"nice", use:"دیپ روی میلهٔ صاف — نیمهٔ بالای ماسل‌آپ",
+    alt:"لبهٔ یک دستگاه محکم یا میلهٔ اسمیت پایین‌آمده. دیپ پارالل جایگزین کاملی نیست چون زاویهٔ مچ فرق دارد." },
+  { n:"جعبه یا پلایوباکس", lvl:"nice", use:"منفی و پرشی ماسل‌آپ",
+    alt:"هر نیمکت محکمی. فقط باید بلندیش کافی باشد که بتوانی به بالای میله برسی." },
+  { n:"دستگاه پک‌دک", lvl:"nice", use:"پک‌دک معکوس (قامت)، فلای",
+    alt:"فلای معکوس دمبل روی میز شیب‌دار + فلای کابل" },
+  { n:"دستگاه هایپراکستنشن", lvl:"nice", use:"فیلهٔ کمر و سرین",
+    alt:"Cable Pull-Through یا گلوت بریج" },
+  { n:"دستگاه ساق (ایستاده و نشسته)", lvl:"nice", use:"ساق",
+    alt:"یک پله + دمبل در دست. تقریباً به همان خوبی." },
+  { n:"دستگاه هیپ‌تراست", lvl:"nice", use:"سرین",
+    alt:"نیمکت معمولی + هالتر یا دمبل روی لگن" },
+  { n:"هالتر EZ", lvl:"nice", use:"جلوبازو",
+    alt:"هالتر صاف یا دمبل — فقط راحتی مچ فرق می‌کند" },
+  { n:"دستگاه قایقی اختصاصی", lvl:"no", use:"—",
+    alt:"هر سیم‌کش با قرقرهٔ پایین کافی است. دستگاه جدا لازم نیست." },
+  { n:"دستگاه اسمیت", lvl:"no", use:"—",
+    alt:"فقط اگر بخواهی اسکوات را با پشتِ ساپورت‌شده بزنی. اختیاری." },
+  { n:"تردمیل", lvl:"no", use:"—",
+    alt:"پله برای هوازیِ تو بهتر است: سرین بیشتر، زانو کمتر." },
+  { n:"کش مقاومتی", lvl:"no", use:"گرم‌کردن و کار قامت",
+    alt:"مفید و ارزان است، ولی هر کاری که می‌کند با سیم‌کش هم می‌شود." },
+];
+
+function renderEqp(){
+  const badge = l => l==="must" ? `<span class="badge b-must">ضروری</span>`
+                   : l==="nice" ? `<span class="badge b-nice">خوب است باشد</span>`
+                   : `<span class="badge b-no">لازم نیست</span>`;
+  const rows = EQP.map(e=>`<tr>
+      <td><b>${e.n}</b><br>${badge(e.lvl)}</td>
+      <td>${e.use}<br><span style="color:var(--faint)">اگر نبود: ${e.alt}</span></td>
+    </tr>`).join("");
+  const must = EQP.filter(e=>e.lvl==="must").length;
+  view.innerHTML = `<div class="dhead"><h2>تجهیزات لازم</h2>
+      <div class="focus">${faD(must)} قلم ضروری · بقیه جایگزین دارد</div></div>
+    <div class="warm"><b>خلاصه:</b> اگر باشگاهت دمبل، میز شیب‌دار، سیم‌کش، بارفیکس و هالتر دارد، کل برنامه اجرا می‌شود. بقیه فقط کار را راحت‌تر می‌کنند.</div>
+    <div class="acc"><div class="pi open" style="border-color:var(--line)">
+      <div class="bin" style="padding-top:14px;max-height:none">
+        <table class="eqt"><thead><tr><th>تجهیز</th><th>کاربرد و جایگزین</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div></div></div>`;
+}
+
+function renderInfo(){
+  let html = `<div class="acc">`;
+  info.forEach((s,i)=>{
+    html += `<div class="pi ${s.danger?'danger':''}" id="p-${i}">
+      <button onclick="accToggle(${i})">${s.t}<span class="ic">+</span></button>
+      <div class="body"><div class="bin">${s.body}</div></div></div>`;
+  });
+  html += `</div>`;
+  view.innerHTML = html;
+}
+
+
+function renderNut(){
+  view.innerHTML=`<div class="nut">
+    <div class="ncard ncal">
+      <div class="big">۲۳۰۰</div><div class="u">کالری در روز (هدف کات)</div>
+      <div class="rg">نگه‌دارندهٔ تخمینی ~۲۷۵۰ · بازهٔ کاری ۲۲۰۰–۲۴۰۰</div>
+    </div>
+    <div class="ncard">
+      <div class="ntitle">درشت‌مغذی‌های روزانه</div>
+      <div class="macros">
+        <div class="macro m-pro"><div class="g">۱۶۰</div><div class="n">پروتئین (g)</div><div class="p">۱۵۰–۱۷۵</div></div>
+        <div class="macro m-fat"><div class="g">۶۰</div><div class="n">چربی (g)</div><div class="p">۵۰–۶۵</div></div>
+        <div class="macro m-carb"><div class="g">۲۸۰</div><div class="n">کربوهیدرات (g)</div><div class="p">باقیِ کالری</div></div>
+      </div>
+      <div class="bar"><span style="width:28%;background:var(--ember)"></span><span style="width:23%;background:var(--gold)"></span><span style="width:49%;background:var(--carb)"></span></div>
+      <div class="barleg"><span>پروتئین<i style="background:var(--ember)"></i></span><span>چربی<i style="background:var(--gold)"></i></span><span>کربوهیدرات<i style="background:var(--carb)"></i></span></div>
+    </div>
+    <div class="ncard">
+      <div class="ntitle">اصول و تنظیم</div>
+      <ul class="nlist">
+        <li><span class="hi">پروتئین مهم‌ترین عدد است:</span> ~<b>۲ گرم به ازای هر کیلو</b> وزن بدن، در ۳–۴ وعده پخش شود. ستون حفظ عضله در کات.</li>
+        <li><b>کسری ملایم:</b> ~۳۰۰–۵۰۰ کالری زیر نگه‌دارنده. کسری شدید‌تر = از دست دادن عضله و افت عملکرد تمرین.</li>
+        <li><b>چربی</b> زیر ۵۰ گرم نرود (سلامت هورمونی). <b>کربوهیدرات</b> را بیشتر حول تمرین بگذار تا قدرت حفظ شود.</li>
+        <li><b>تنظیم با واقعیت:</b> ۱–۲ هفته وزن صبحگاهی را ثبت کن. اگر کاهش > ۰.۷۵kg/هفته بود کمی کالری اضافه کن؛ اگر صفر بود ~۱۵۰ کالری کم کن یا کمی هوازی اضافه کن.</li>
+        <li>۲۵–۳۵ گرم فیبر · ۳ لیتر آب · خواب ۷–۸ ساعت.</li>
+      </ul>
+      <div style="font-size:11px;color:var(--faint);margin-top:8px">این اعداد تخمینی و بر اساس فرمول استانداردند، نه تجویز پزشکی. برای شرایط خاص با متخصص تغذیه مشورت کن.</div>
+    </div>
+  </div>`;
+}
+
+
+/* ================= state ================= */
+const todayWd = new Date().getDay();
+const todayIdx = days.findIndex(d => d.wd === todayWd);
+let active = todayIdx >= 0 ? todayIdx : days.findIndex(d => d.type === "train");
+const tabsEl = document.getElementById("tabs");
+const view   = document.getElementById("view");
+
+const getSets = (k,i) => parseInt(store.get(V+k+":"+i) || "0",10) || 0;
+const setSets = (k,i,n) => n>0 ? store.set(V+k+":"+i,String(n)) : store.del(V+k+":"+i);
+function dayProgress(d){
+  if(d.type!=="train") return [0,0];
+  let done=0,total=0;
+  d.ex.forEach((e,i)=>{ total+=e[1]; done+=Math.min(getSets(d.key,i),e[1]); });
+  return [done,total];
+}
+
+/* ---------- tabs (built once, updated in place) ---------- */
+const TABS=[];
+function buildTabs(){
+  tabsEl.innerHTML=""; TABS.length=0;
+  const add=(key,label,sub,alt)=>{
+    const b=document.createElement("button");
+    b.className="tab"+(alt?" alt":"");
+    b.innerHTML=`${label}<span class="d">${sub}</span>`;
+    b.onclick=()=>selectTab(key,b);
+    tabsEl.appendChild(b); TABS.push({key,el:b}); return b;
+  };
+  days.forEach((d,i)=>{
+    const b=add(i,d.day,d.type==="rest"?"استراحت":d.title,false);
+    if(d.type==="rest") b.classList.add("rest");
+    if(d.wd===todayWd) b.classList.add("today");
+  });
+  add("nut","تغذیه","کالری · پروتئین",true);
+  add("eqp","تجهیزات","چه چیزی لازم است",true);
+  add("info","راهنما","اصول · قامت · گردن",true);
+  syncTabs();
+}
+function syncTabs(){
+  TABS.forEach(t=>{
+    t.el.classList.toggle("on",t.key===active);
+    if(typeof t.key==="number" && days[t.key].type==="train"){
+      const [dn,tt]=dayProgress(days[t.key]);
+      t.el.classList.toggle("full",tt>0&&dn>=tt);
+    }
+  });
+}
+function selectTab(key,el){
+  active=key; syncTabs(); renderView();
+  if(el) el.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ================= render ================= */
+function scoreboard(done,total){
+  const full = total>0 && done>=total;
+  let segs=""; for(let i=0;i<total;i++) segs+=`<div class="seg${i<done?' on':''}"></div>`;
+  return `<div class="score${full?' full':''}">
+      <span class="n">${faD(done)}</span><span class="sl">/${faD(total)}</span>
+      <span class="lab">ست انجام‌شده</span></div>
+    <div class="segs">${segs}</div>`;
+}
+
+function renderView(){
+  if(active==="info") return renderInfo();
+  if(active==="nut")  return renderNut();
+  if(active==="eqp")  return renderEqp();
+  const d=days[active];
+  if(d.type==="rest"){
+    view.innerHTML=`<div class="restday"><div class="big">🌙</div>
+      <h3>${d.title} — ${d.day}</h3><p>${d.rest}</p></div>`;
+    return;
+  }
+  const [done,total]=dayProgress(d);
+  let html=`<div class="dhead"><h2>${d.title}</h2><div class="focus">${d.focus}</div>
+    ${scoreboard(done,total)}</div>
+    <div class="warm"><b>گرم‌کردن:</b> ${d.warm}</div><div class="list">`;
+
+  d.ex.forEach((e,i)=>{
+    const [id,sets,reps,rest,tempo,note]=e;
+    const X=EX[id]||{}, name=X["ن"]||id;
+    const cs=Math.min(getSets(d.key,i),sets);
+    const wt=store.get(V+"wt:"+d.key+":"+i)||"";
+    const li=(a,c="")=>(a||[]).map(t=>`<li class="${c}">${t}</li>`).join("");
+    let dots="";
+    for(let s=1;s<=sets;s++)
+      dots+=`<button class="dot${s<=cs?' on':''}" onclick="tapSet('${d.key}',${i},${s})" aria-label="ست ${faD(s)}">${faD(s)}</button>`;
+
+    html+=`<div class="card${cs>=sets?' done':''}" id="c-${d.key}-${i}">
+      <div class="ctop"><div class="num">${faD(i+1)}</div>
+        <div class="cname"><div class="t">${name}</div>
+          <span class="eq">${X.eq||"—"}</span>
+          ${note?`<span class="note">⚠ ${note}</span>`:""}</div></div>
+      <div class="stats">
+        <span class="st"><span class="l">ست × تکرار</span><span class="v">${faD(sets)} × ${reps}</span></span>
+        <span class="st tap tempo" onclick="openTempo('${tempo}')"><span class="l">تمپو ؟</span><span class="v">${tempo}</span></span>
+        <span class="st tap rest" onclick="restFor('${d.key}',${i})"><span class="l">استراحت</span><span class="v">${faD(rest)}ث</span></span>
+        <span class="st wt"><span class="l">وزنه (kg)</span>
+          <input type="text" inputmode="decimal" value="${esc(wt)}" placeholder="—" onchange="logWt('${d.key}',${i},this)"></span>
+      </div>
+      <div class="setsrow"><span class="setslab">ست‌ها</span><div class="dots">${dots}</div></div>
+      <div class="learn" id="l-${d.key}-${i}">
+        <button onclick="toggleLearn('${d.key}',${i})">آموزش حرکت ▾</button>
+        <div class="panel"><div class="inner">
+          ${X.setup?`<div class="es"><div class="eh">آماده‌سازی</div><p class="ep">${X.setup}</p></div>`:""}
+          <div class="es"><div class="eh">اجرا</div><ol class="steps">${li(X.steps)}</ol></div>
+          ${(X.cues||[]).length?`<div class="es"><div class="eh ok">نکات کلیدی</div><ul class="bl ok">${li(X.cues)}</ul></div>`:""}
+          ${(X.err||[]).length?`<div class="es"><div class="eh bad">اشتباهات رایج</div><ul class="bl bad">${li(X.err)}</ul></div>`:""}
+          ${X.breath?`<div class="es"><div class="eh br">تنفس</div><p class="ep">${X.breath}</p></div>`:""}
+          <div class="tgt">عضلهٔ هدف: <b>${X.target||"—"}</b></div>
+          ${X.swap?`<div class="tgt sw">اگر نبود: <b>${X.swap}</b></div>`:""}
+        </div></div></div></div>`;
+  });
+  html+=`</div><div class="dfoot"><button class="reset" onclick="resetDay('${d.key}')">پاک‌کردن ست‌های امروز</button></div>`;
+  view.innerHTML=html;
+  d.ex.forEach((e,i)=>{
+    const c=document.getElementById("c-"+d.key+"-"+i);
+    if(c) fillCard(c, e[1] ? Math.min(getSets(d.key,i),e[1])/e[1]*100 : 0);
+  });
+}
+function fillCard(card,pct){
+  card.style.backgroundImage = pct>0
+    ? `linear-gradient(to bottom, var(--volt) 0 ${pct}%, transparent ${pct}%)`
+    : "none";
+  card.style.backgroundSize="3px 100%";
+  card.style.backgroundRepeat="no-repeat";
+  card.style.backgroundPosition="right top";
+}
+
+/* ---------- interactions ---------- */
+function tapSet(k,i,s){
+  const d=days[active], sets=d.ex[i][1], rest=d.ex[i][3];
+  const cur=Math.min(getSets(k,i),sets);
+  const next=(s===cur)?s-1:s;
+  setSets(k,i,next);
+  const card=document.getElementById("c-"+k+"-"+i);
+  if(card){
+    card.querySelectorAll(".dot").forEach((el,idx)=>el.classList.toggle("on",idx<next));
+    card.classList.toggle("done",next>=sets);
+    fillCard(card, sets ? next/sets*100 : 0);
+  }
+  const [done,total]=dayProgress(d);
+  const sc=view.querySelector(".score"), segs=view.querySelectorAll(".seg");
+  if(sc){
+    sc.querySelector(".n").textContent=faD(done);
+    sc.classList.toggle("full",total>0&&done>=total);
+  }
+  segs.forEach((el,idx)=>el.classList.toggle("on",idx<done));
+  syncTabs();
+  if(next>cur){
+    if(navigator.vibrate) navigator.vibrate(18);
+    if(next<sets) startTimer(rest,(EX[d.ex[i][0]]||{})["ن"]||"");
+  }
+}
+function restFor(k,i){
+  const d=days.find(x=>x.key===k); if(!d) return;
+  const e=d.ex[i];
+  startTimer(e[3],(EX[e[0]]||{})["ن"]||"");
+}
+function logWt(k,i,el){
+  const v=el.value.trim();
+  if(v) store.set(V+"wt:"+k+":"+i,v); else store.del(V+"wt:"+k+":"+i);
+  el.blur();
+}
+function resetDay(k){
+  const d=days.find(x=>x.key===k);
+  d.ex.forEach((_,i)=>store.del(V+k+":"+i));
+  renderView(); syncTabs();
+}
+function toggleLearn(k,i){
+  const box=document.getElementById("l-"+k+"-"+i), p=box.querySelector(".panel");
+  const open=box.classList.toggle("open");
+  p.style.maxHeight=open?p.scrollHeight+"px":"0";
+  box.querySelector("button").textContent=open?"بستن آموزش ▴":"آموزش حرکت ▾";
+}
+function accToggle(i){
+  const p=document.getElementById("p-"+i),b=p.querySelector(".body");
+  const open=p.classList.toggle("open");
+  b.style.maxHeight=open?b.scrollHeight+"px":"0";
+}
+
+/* ---------- tempo modal ---------- */
+const tmodal=document.getElementById("tmodal");
+function openTempo(t){
+  const parts=String(t).split("-"), grid=document.querySelector(".tg");
+  if(parts.length===4){
+    ["tg0","tg1","tg2","tg3"].forEach((id,k)=>document.getElementById(id).textContent=faD(parts[k]));
+    grid.style.display="flex";
+  } else grid.style.display="none";
+  tmodal.classList.add("show");
+}
+function closeTempo(){ tmodal.classList.remove("show"); }
+tmodal.onclick=e=>{ if(e.target===tmodal) closeTempo(); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeTempo(); });
+
+/* ================= rest timer (rewritten) =================
+   Old version drove the countdown with requestAnimationFrame, which the browser
+   FREEZES when the screen locks or the tab goes to the background. On unlock the
+   clock had moved on but the display hadn't — so the number jumped.
+   Now: a single interval, every frame recomputed from Date.now() (so it can never
+   drift), plus a resync on visibilitychange, plus a screen wake lock so the phone
+   doesn't sleep mid-rest in the first place. */
+const T={total:60,endAt:0,left:60,paused:false,running:false};
+const tEl=document.getElementById("timer"), tnum=document.getElementById("tnum"),
+      tfg=document.getElementById("tfg"), tex=document.getElementById("tex"),
+      tlab=document.getElementById("tlab"), tpause=document.getElementById("tpause");
+const TC=2*Math.PI*29;
+let tHandle=null, audioCtx=null, wakeLock=null;
+
+function stopTicking(){ if(tHandle){ clearInterval(tHandle); tHandle=null; } }
+function paintTimer(){
+  const left = T.paused ? T.left : Math.max(0,(T.endAt-Date.now())/1000);
+  if(!T.paused) T.left=left;
+  tnum.textContent=faD(Math.ceil(left));
+  tfg.setAttribute("stroke-dashoffset", TC*(1-(T.total?left/T.total:0)));
+  if(!T.paused && left<=0) finishTimer();
+}
+function runTicking(){ stopTicking(); paintTimer(); tHandle=setInterval(paintTimer,200); }
+
+function startTimer(sec,label){
+  T.total=sec; T.left=sec; T.paused=false; T.running=true;
+  T.endAt=Date.now()+sec*1000;
+  tex.textContent=label||"حرکت بعدی";
+  tlab.textContent="استراحت";
+  tpause.textContent="⏸";
+  tEl.classList.add("show"); tEl.classList.remove("done");
+  primeAudio(); requestWake(); runTicking();
+}
+function finishTimer(){
+  stopTicking(); T.running=false;
+  tlab.textContent="استراحت تمام — ست بعدی";
+  tEl.classList.add("done");
+  tnum.textContent="۰";
+  tfg.setAttribute("stroke-dashoffset",TC);
+  beep();
+  if(navigator.vibrate) navigator.vibrate([120,80,120]);
+  releaseWake();
+  setTimeout(()=>tEl.classList.remove("show"),2600);
+}
+function closeTimer(){
+  stopTicking(); T.running=false; T.paused=true;
+  releaseWake(); tEl.classList.remove("show");
+}
+
+/* keep the screen awake while resting (main cause of the "jump") */
+async function requestWake(){
+  try{ if("wakeLock" in navigator && !wakeLock) wakeLock=await navigator.wakeLock.request("screen"); }catch(e){}
+}
+function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+
+/* resync the instant we come back from a locked screen / background tab */
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden) return;
+  if(T.running && !T.paused){ paintTimer(); if(T.running) requestWake(); }
+});
+
+function primeAudio(){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended") audioCtx.resume();
+  }catch(e){}
+}
+function beep(){
+  try{
+    primeAudio(); if(!audioCtx) return;
+    [0,160,320].forEach(dl=>{
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type="sine"; o.frequency.value=880;
+      const t=audioCtx.currentTime+dl/1000;
+      g.gain.setValueAtTime(.001,t);
+      g.gain.exponentialRampToValueAtTime(.25,t+.02);
+      g.gain.exponentialRampToValueAtTime(.001,t+.13);
+      o.start(t); o.stop(t+.14);
+    });
+  }catch(e){}
+}
+tpause.onclick=()=>{
+  if(!T.running) return;
+  T.paused=!T.paused;
+  tpause.textContent=T.paused?"▶":"⏸";
+  if(T.paused){ T.left=Math.max(0,(T.endAt-Date.now())/1000); stopTicking(); releaseWake(); }
+  else { T.endAt=Date.now()+T.left*1000; requestWake(); runTicking(); }
+};
+document.getElementById("tplus").onclick=()=>{
+  T.total+=15; T.left+=15; T.endAt+=15000;
+  if(tEl.classList.contains("done")){
+    tEl.classList.remove("done"); T.running=true; tlab.textContent="استراحت";
+    T.endAt=Date.now()+T.left*1000; requestWake(); runTicking();
+  } else paintTimer();
+};
+document.getElementById("tskip").onclick=closeTimer;
+
+/* ---------- boot ---------- */
+buildTabs();
+renderView();
+requestAnimationFrame(()=>{
+  const t=TABS.find(x=>x.key===active);
+  if(t) t.el.scrollIntoView({inline:"center",block:"nearest"});
+});
+
+/* ---------- offline / install ----------
+   Registered relative to this page, so the scope follows the app wherever it is
+   hosted (including a GitHub Pages subdirectory). */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("./sw.js").then(reg=>{
+      /* A new version was deployed while the app was installed: swap it in on the
+         next launch rather than mid-workout, so nothing reloads under the user. */
+      reg.addEventListener("updatefound",()=>{
+        const sw=reg.installing;
+        if(!sw) return;
+        sw.addEventListener("statechange",()=>{
+          if(sw.state==="installed" && navigator.serviceWorker.controller) pendingUpdate=true;
+        });
+      });
+    }).catch(()=>{});
+  });
+}
+let pendingUpdate=false;
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden && pendingUpdate && !T.running){ pendingUpdate=false; location.reload(); }
+});
+
+/* Every set you tick lives in localStorage only. Browsers are free to evict that
+   under storage pressure — ask for it to be kept. */
+try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
+</script>
+</body>
+</html>
