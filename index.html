@@ -231,6 +231,28 @@
   .nut{margin-top:16px;display:flex;flex-direction:column;gap:11px}
   .ncard{background:var(--surf);border:1px solid var(--line);padding:16px;
     clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px)}
+  .backupBtns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .bkBtn{flex:1;min-width:130px;min-height:44px;background:var(--volt);color:#0B1200;border:none;
+    font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;text-align:center;
+    display:flex;align-items:center;justify-content:center;padding:0 12px;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+  .bkBtn.ghost{background:var(--raise);color:var(--text);border:1px solid var(--line2)}
+  .bkBtn:active{opacity:.8}
+  .backupText textarea{width:100%;margin-top:8px;min-height:110px;background:var(--raise);
+    border:1px solid var(--line2);color:var(--text);font-family:var(--mono);font-size:10.5px;
+    padding:8px;resize:vertical}
+  .wthist{background:none;border:none;color:var(--ice);font-size:11px;cursor:pointer;padding:0;
+    vertical-align:middle;line-height:1;margin-inline-start:2px}
+  .spark{margin-top:12px;background:var(--bg);border:1px solid var(--line);padding:10px}
+  .wrows{display:flex;flex-direction:column;gap:0;margin-top:4px}
+  .wrow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .wrow:last-child{border-bottom:none}
+  .wrow .dt{color:var(--faint);font-size:11px;flex:1}
+  .wrow .kg{font-family:var(--mono);font-size:15px;font-weight:800;color:var(--text)}
+  .wrow .dl{font-family:var(--mono);font-size:11.5px;font-weight:700;min-width:52px;text-align:start}
+  .wrow .dl.gain{color:var(--volt)} .wrow .dl.loss{color:var(--ember)} .wrow .dl.eq{color:var(--faint)}
+  .wrow .x{background:none;border:none;color:var(--faint);font-size:16px;cursor:pointer;padding:4px 8px}
+  .empty{text-align:center;color:var(--faint);font-size:12.5px;padding:22px 10px;line-height:1.9}
   .ncal{text-align:center}
   .ncal .big{font-family:var(--mono);font-size:40px;font-weight:800;line-height:1;color:var(--volt)}
   .ncal .u{color:var(--muted);font-size:13px;margin-top:5px}
@@ -358,6 +380,14 @@
     </div>
     <div class="exr"><b>چرا مهم است؟</b> آهسته‌کردن فاز منفی، مدت زمان تحت فشار عضله را بیشتر می‌کند بدون نیاز به وزنهٔ سنگین‌تر — با همان دمبل، تحریک بیشتر و ریسک کمتر.</div>
     <button class="close" onclick="closeTempo()">فهمیدم</button>
+  </div>
+</div>
+
+<div class="modal" id="wtmodal">
+  <div class="box">
+    <h3 id="wtmTitle">—</h3>
+    <div id="wtmBody"></div>
+    <button class="close" onclick="closeWtHist()">باشه</button>
   </div>
 </div>
 
@@ -1037,8 +1067,66 @@ function renderEqp(){
       </div></div></div>`;
 }
 
+/* ---------- پشتیبان‌گیری ---------- */
+function backupData(){
+  const data={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k && k.indexOf(V)===0) data[k]=localStorage.getItem(k);
+  }
+  return {app:"gym-plan",v:1,exportedAt:new Date().toISOString(),data};
+}
+async function exportBackup(){
+  const payload=JSON.stringify(backupData(),null,2);
+  const fname="gym-plan-backup-"+new Date().toISOString().slice(0,10)+".json";
+  const file=new File([payload],fname,{type:"application/json"});
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:fname});
+      return;
+    }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  try{
+    const a=document.createElement("a");
+    const url=URL.createObjectURL(file);
+    a.href=url; a.download=fname; document.body.appendChild(a); a.click();
+    a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }catch(e){
+    const box=document.getElementById("backupText");
+    if(box){ box.hidden=false; box.querySelector("textarea").value=payload; box.querySelector("textarea").select(); }
+  }
+}
+function importBackup(el){
+  const file=el.files && el.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let parsed;
+    try{ parsed=JSON.parse(reader.result); }
+    catch(e){ alert("این فایل، فایل پشتیبان معتبری نیست."); el.value=""; return; }
+    if(!parsed || typeof parsed.data!=="object"){ alert("این فایل، فایل پشتیبان معتبری نیست."); el.value=""; return; }
+    if(!confirm("این کار دادهٔ فعلی گوشی را با فایل پشتیبان جایگزین می‌کند. ادامه بدهم؟")){ el.value=""; return; }
+    Object.keys(parsed.data).forEach(k=>{ if(k.indexOf(V)===0) localStorage.setItem(k,parsed.data[k]); });
+    el.value="";
+    alert("بازیابی شد. صفحه رفرش می‌شود.");
+    location.reload();
+  };
+  reader.readAsText(file);
+}
+
 function renderInfo(){
-  let html = `<div class="acc">`;
+  let html = `<div class="ncard">
+    <div class="ntitle">پشتیبان‌گیری</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.85">همهٔ ست‌ها و وزنه‌های ثبت‌شده فقط روی همین گوشی ذخیره‌ان. یک بار خروجی بگیر و فایل را جایی امن (آیکلاد، ایمیل خودت) نگه دار.</div>
+    <div class="backupBtns">
+      <button class="bkBtn" onclick="exportBackup()">⇪ خروجی گرفتن</button>
+      <label class="bkBtn ghost">⇩ بازیابی از فایل<input type="file" accept="application/json,.json" style="display:none" onchange="importBackup(this)"></label>
+    </div>
+    <div class="backupText" id="backupText" hidden>
+      <div style="font-size:11px;color:var(--faint);margin-top:8px">اشتراک‌گذاری کار نکرد؛ این متن را کپی و در جایی ذخیره کن:</div>
+      <textarea readonly onclick="this.select()"></textarea>
+    </div>
+  </div>
+  <div class="acc">`;
   info.forEach((s,i)=>{
     html += `<div class="pi ${s.danger?'danger':''}" id="p-${i}">
       <button onclick="accToggle(${i})">${s.t}<span class="ic">+</span></button>
@@ -1161,7 +1249,8 @@ function renderView(){
     const [id,sets,reps,rest,tempo,note]=e;
     const X=EX[id]||{}, name=X["ن"]||id;
     const cs=Math.min(getSets(d.key,i),sets);
-    const wt=store.get(V+"wt:"+d.key+":"+i)||"";
+    const wt=curWt(d.key,i);
+    const wtHasHist=getWtHist(d.key,i).length>0;
     const li=(a,c="")=>(a||[]).map(t=>`<li class="${c}">${t}</li>`).join("");
     let dots="";
     for(let s=1;s<=sets;s++)
@@ -1177,8 +1266,8 @@ function renderView(){
         <span class="st"><span class="l">ست × تکرار</span><span class="v">${faD(sets)} × ${reps}</span></span>
         <span class="st tap tempo" onclick="openTempo('${tempo}')"><span class="l">تمپو ؟</span><span class="v">${tempo}</span></span>
         <span class="st tap rest" onclick="restFor('${d.key}',${i})"><span class="l">استراحت</span><span class="v">${faD(rest)}ث</span></span>
-        <span class="st wt"><span class="l">وزنه (kg)</span>
-          <input type="text" inputmode="decimal" value="${esc(wt)}" placeholder="—" onchange="logWt('${d.key}',${i},this)"></span>
+        <span class="st wt"><span class="l">وزنه (kg)${wtHasHist?` <button class="wthist" onclick="openWtHist('${d.key}',${i})" aria-label="روند وزنه">📈</button>`:""}</span>
+          <input type="text" inputmode="decimal" value="${esc(wt===""?"":String(wt))}" placeholder="—" onchange="logWt('${d.key}',${i},this)"></span>
       </div>
       <div class="setsrow"><span class="setslab">ست‌ها</span><div class="dots">${dots}</div></div>
       <div class="learn" id="l-${d.key}-${i}">
@@ -1239,10 +1328,95 @@ function restFor(k,i){
   const e=d.ex[i];
   startTimer(e[3],(EX[e[0]]||{})["ن"]||"");
 }
+/* ---------- تاریخچهٔ وزنهٔ هر حرکت ---------- */
+function getWtHist(k,i){ try{ return JSON.parse(store.get(V+"wh:"+k+":"+i)||"[]"); }catch(e){ return []; } }
+function setWtHist(k,i,a){ store.set(V+"wh:"+k+":"+i,JSON.stringify(a)); }
+function curWt(k,i){
+  /* یک‌بار مهاجرت: نسخهٔ قبلی فقط آخرین عدد را زیر «wt:» نگه می‌داشت، هر بار جایگزین می‌شد.
+     همان مقدار را همین یک‌بار به‌عنوان اولین رکورد تاریخچه (با تاریخ امروز، چون تاریخ اصلی ثبت نشده بود) منتقل می‌کنیم. */
+  const hist=getWtHist(k,i);
+  if(hist.length) return hist[hist.length-1].w;
+  const old=store.get(V+"wt:"+k+":"+i);
+  if(old){
+    const v=parseFloat(old);
+    if(v){
+      setWtHist(k,i,[{d:new Date().toISOString().slice(0,10),w:Math.round(v*10)/10}]);
+      store.del(V+"wt:"+k+":"+i);
+      return v;
+    }
+  }
+  return "";
+}
+function faDateFa(iso){
+  try{ return new Date(iso).toLocaleDateString("fa-IR",{year:"numeric",month:"long",day:"numeric"}); }
+  catch(e){ return iso; }
+}
+function sparkline(a){
+  if(a.length<2) return "";
+  const w=300,h=100,p=12;
+  const ws=a.map(x=>x.w), mn=Math.min(...ws), mx=Math.max(...ws), rg=(mx-mn)||1;
+  const pts=a.map((x,i)=>{
+    const px=p+(i/(a.length-1))*(w-2*p);
+    const py=h-p-((x.w-mn)/rg)*(h-2*p);
+    return [px,py];
+  });
+  const line=pts.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" ");
+  const dots=pts.map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="2.6" fill="var(--volt)"/>`).join("");
+  return `<div class="spark"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${line}" fill="none" stroke="var(--volt)" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    ${dots}</svg></div>`;
+}
 function logWt(k,i,el){
-  const v=el.value.trim();
-  if(v) store.set(V+"wt:"+k+":"+i,v); else store.del(V+"wt:"+k+":"+i);
+  const raw=el.value.trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
   el.blur();
+  if(!raw) return;
+  const v=parseFloat(raw);
+  if(!v || v<=0) return;
+  const val=Math.round(v*10)/10;
+  const h=getWtHist(k,i);
+  const wasEmpty=h.length===0;
+  const today=new Date().toISOString().slice(0,10);
+  const idx=h.findIndex(x=>x.d===today);
+  if(idx>=0) h[idx].w=val; else h.push({d:today,w:val});
+  h.sort((a,b)=>a.d<b.d?-1:1);
+  setWtHist(k,i,h);
+  if(wasEmpty){
+    const lab=el.closest(".st.wt")?.querySelector(".l");
+    if(lab && !lab.querySelector(".wthist")){
+      lab.insertAdjacentHTML("beforeend",` <button class="wthist" onclick="openWtHist('${k}',${i})" aria-label="روند وزنه">📈</button>`);
+    }
+  }
+}
+const wtmodal=document.getElementById("wtmodal");
+function openWtHist(k,i){
+  const d=days.find(x=>x.key===k); if(!d) return;
+  const e=d.ex[i]; const X=EX[e[0]]||{};
+  document.getElementById("wtmTitle").textContent=X["ن"]||e[0];
+  const h=getWtHist(k,i);
+  const rows=h.slice().reverse().map((r,ri)=>{
+    const idx=h.length-1-ri;
+    const p=idx>0?h[idx-1].w:null;
+    const df=p!=null?Math.round((r.w-p)*10)/10:null;
+    const c=df==null?"eq":(df>0.05?"gain":(df<-0.05?"loss":"eq"));
+    return `<div class="wrow">
+      <span class="kg">${faD(r.w.toFixed(1))}</span>
+      <span class="dl ${c}">${df==null?"—":(df>0?"+":"")+faD(df.toFixed(1))}</span>
+      <span class="dt">${faDateFa(r.d)}</span>
+      <button class="x" onclick="delWtHist('${k}',${i},${idx})" aria-label="حذف">✕</button></div>`;
+  }).join("");
+  document.getElementById("wtmBody").innerHTML = h.length
+    ? sparkline(h) + `<div class="wrows">${rows}</div>`
+    : `<div class="empty">هنوز چیزی ثبت نشده.</div>`;
+  wtmodal.classList.add("show");
+}
+function closeWtHist(){ wtmodal.classList.remove("show"); }
+wtmodal.onclick=e=>{ if(e.target===wtmodal) closeWtHist(); };
+function delWtHist(k,i,idx){
+  const h=getWtHist(k,i); h.splice(idx,1); setWtHist(k,i,h);
+  openWtHist(k,i);
+  const card=document.getElementById("c-"+k+"-"+i);
+  if(card){ const el=card.querySelector(".st.wt input"); if(el) el.value=curWt(k,i); }
 }
 function resetDay(k){
   const d=days.find(x=>x.key===k);
