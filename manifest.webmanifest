@@ -1,21 +1,44 @@
 {
   "id": "./",
-  "name": "Gym Plan — برنامهٔ تمرین",
+  "name": "Gym Plan PRO — برنامهٔ تمرین",
   "short_name": "Gym Plan",
-  "description": "برنامهٔ تمرین شخصی: ست‌شمار، تایمر استراحت، آموزش حرکات و تغذیه.",
+  "description": "برنامهٔ شخصی تمرین با آموزش دقیق حرکت‌ها و موبیلیتی، ست‌شمار، تایمر و سوابق وزنه.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#08090B",
-  "theme_color": "#08090B",
+  "background_color": "#06080B",
+  "theme_color": "#06080B",
   "lang": "fa",
   "dir": "rtl",
-  "categories": ["health", "fitness", "lifestyle"],
+  "categories": [
+    "health",
+    "fitness",
+    "lifestyle"
+  ],
   "icons": [
-    { "src": "./assets/favicon-32.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "./assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "./assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "./assets/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
